@@ -1,147 +1,43 @@
-# Dressed & Dared
+# Dressed & Dared — v5 single-file GitHub build
 
-A GitHub-ready static PWA for rolling:
+This build is intentionally simple to avoid GitHub Pages upload/caching problems.
 
-- a hard-coded category/color outfit
-- one fully random user-filled location
-- a user-selected number of fully random, non-duplicate dares
+## Upload instructions
 
-The app uses local storage only. No accounts, Firebase, or backend.
-
-## Important upload note
-
-Upload the **files inside this folder** to the root of your GitHub repository:
+Upload only these files to the root of your GitHub repository:
 
 - `index.html`
-- `app.js`
-- `styles.css`
-- `manifest.json`
-- `sw.js`
-- `icons/`
+- `.nojekyll`
+- `README.md` optional
 
-Do not upload a single parent folder as the only item in the repository, or GitHub Pages may not serve the app correctly from the repo root.
+There are no icons, no manifest, no service worker, no external JavaScript, and no external CSS in this build. The whole app is inside `index.html`.
 
-This fixed build also has CSS and JavaScript inlined inside `index.html`, so the page is much harder to break if GitHub Pages or the browser cache misses a file.
+## Why this build exists
 
-## Current locked rules
+Earlier builds included app icons and PWA files. If one of those PNG icon files is accidentally uploaded or renamed as `index.html`, GitHub Pages will show text beginning with `PNG IHDR`, which means the site is serving an image file as the page.
 
-### Outfit
+This version removes those extra files so there is nothing to mix up.
 
-- Clothing categories are hard-coded.
-- The user only checks available colors per category.
-- No item types.
-- If a category has no checked colors, it is skipped.
-- Normal outfit rolls have a 30% matching-color chance and a 70% mixed-color chance.
-- If the user owns shop outfits, outfit source is 75% normal random outfit and 25% shop outfit.
+## If GitHub still shows the old/broken page
 
-### Locations
+1. Delete every old file in the repository.
+2. Upload the v5 files.
+3. Commit changes.
+4. Open the site with `?v=5` added to the URL.
+5. Hard refresh.
+6. If needed, open browser DevTools → Application → Service Workers → Unregister.
 
-- User-filled plain list.
-- No categories.
-- No intensity.
-- Full randomness.
-- One location is rolled.
+## App rules included
 
-### Dares
-
-- User-filled plain list.
-- No categories.
-- No intensity.
-- No placeholders.
-- User chooses how many dares to roll.
-- Same dare cannot appear twice in the same roll.
-
-### Exhys
-
-- Each rolled dare gets a reward from 30 to 70 Exhys.
-- Lower values are more likely.
-- Weight formula: `weight = 2 - ((amount - 30) / 40)`.
-- Total roll reward is the sum of each dare reward.
-- The user claims Exhys by pressing **Mark as Done**.
-
-### Shop
-
-Shop categories:
-
-- Themes
-- Roll Effects
-- Outfits
-
-Every purchase globally increases all future shop prices by 10% compounded.
-
-Formula:
-
-```js
-currentPrice = basePrice * Math.pow(1.1, totalPurchases)
-currentPrice = Math.ceil(currentPrice * 10) / 10
-```
-
-### Purchasable outfit rarity roster
-
-Common:
-
-- Angel Lingerie — all white lingerie and heels only
-- Devil Lingerie — black and red heels and lingerie only
-- Casual Girly — jeans, trainers, t-shirt
-- Elegant Girly — elegant dress and heels
-
-Rare:
-
-- Cheerleader
-- Maid
-- Schoolgirl
-- Goth
-
-Epic:
-
-- Princess Belle Cosplay
-- Elsa Cosplay
-
-Legendary:
-
-- Latex Maid
-- Latex Doll
-
-## Deploy on GitHub Pages
-
-1. Create a new GitHub repository.
-2. Upload all files from this folder to the repository root.
-3. Open the repository settings.
-4. Go to **Pages**.
-5. Set the source to your main branch and root folder.
-6. Save.
-
-GitHub Pages will host the app as a static PWA.
-
-## If the old broken version keeps showing
-
-GitHub Pages and service workers can cache old files. After uploading this fixed build:
-
-1. Hard refresh the page.
-2. On Chrome desktop, press `Ctrl + Shift + R`.
-3. If it still looks wrong, open DevTools → Application → Storage → Clear site data, then reload.
-4. On mobile, clear the site data for the GitHub Pages URL or uninstall/reinstall the PWA shortcut.
-
-## Local testing
-
-Open `index.html` directly, or run a small local server:
-
-```bash
-python -m http.server 8000
-```
-
-Then open:
-
-```text
-http://localhost:8000
-```
-
-
-## v3 GitHub cache fix
-
-This build uses external `styles.css?v=3` and `app.js?v=3` files instead of inline code. If GitHub Pages still shows an older broken copy, open the site once with `?v=3` at the end of the URL, then hard-refresh. If it still does not update, clear site data for the GitHub Pages URL to remove the old service worker cache.
-
-
-## v4 deployment note
-
-This build is intentionally single-file for GitHub Pages stability. The CSS and JavaScript are embedded in `index.html`, so the app still works even if external CSS/JS files are not uploaded correctly. It also unregisters older service workers and clears old `dressed-and-dared` caches to stop stale broken builds from taking over the page.
+- Neon Dressing Room theme
+- Local storage only
+- Hard-coded wardrobe categories with color checkboxes
+- Skip categories with no checked color
+- Fully random user-filled locations
+- Fully random user-filled dares
+- User chooses dare count
+- No duplicate dares in the same roll
+- Exhys rewards weighted 30–70 per dare
+- Shop with themes, roll effects, and full outfits
+- Outfit rarities
+- Global shop price inflation: base price × 1.1^totalPurchases, rounded up to 1 decimal
