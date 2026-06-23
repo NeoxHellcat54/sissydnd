@@ -643,6 +643,7 @@ h3 { margin-bottom: 8px; }
       dares: DEFAULT_DARES.map(text => makeListItem(text)),
       currentRoll: null,
       milestonesUnlocked: [],
+      milestoneLog: [],
       discounts: {},
       priceFreezes: 0,
       stats: createDefaultStats()
@@ -721,6 +722,7 @@ h3 { margin-bottom: 8px; }
     merged.exhys = Number(merged.exhys || 0);
     merged.dareCount = Number(merged.dareCount || 1);
     merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
+    merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
     merged.discounts = merged.discounts && typeof merged.discounts === 'object' ? merged.discounts : {};
     merged.priceFreezes = Number(merged.priceFreezes || 0);
     merged.stats = { ...createDefaultStats(), ...(merged.stats || {}) };
@@ -883,6 +885,83 @@ h3 { margin-bottom: 8px; }
     return Number(stats[stat] || 0);
   }
 
+  function milestoneReveal(milestone) {
+    const stat = milestone.stat;
+    const n = milestone.threshold;
+    const labels = {
+      completedRolls: n === 1 ? 'Complete your first roll' : `Complete ${n} rolls`,
+      completedDares: n === 1 ? 'Complete your first dare' : `Complete ${n} dares`,
+      locationsCount: n === 1 ? 'Add your first location' : `Add ${n} locations`,
+      daresCount: n === 1 ? 'Add your first dare' : `Add ${n} dares to the list`,
+      shopPurchases: n === 1 ? 'Make your first shop purchase' : `Make ${n} shop purchases`,
+      totalExhysEarned: `Earn ${formatNum(n)} total Exhys`,
+      wardrobeCoverage: n === 1 ? 'Enable your first wardrobe category' : `Enable colors in ${n} wardrobe categories`,
+      outfitsUnlocked: n === 1 ? 'Unlock your first outfit' : `Unlock ${n} outfits`,
+      highestDareReward: `Reveal a ${formatNum(n)}+ Exhys single-dare reward`,
+      highestRollReward: `Reveal a ${formatNum(n)}+ Exhys roll reward`,
+      allOutfitsUnlocked: 'Unlock every outfit'
+    };
+    const condition = labels[stat] || `Reach ${formatNum(n)} ${stat}`;
+    const sizeName = milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1);
+    return {
+      title: `${sizeName} Milestone`,
+      condition
+    };
+  }
+
+  function recordMilestoneUnlock(milestone, reward, legendaryBonus) {
+    const reveal = milestoneReveal(milestone);
+    const existing = new Set((state.milestoneLog || []).map(entry => entry.id));
+    if (existing.has(milestone.id)) return;
+    state.milestoneLog = state.milestoneLog || [];
+    state.milestoneLog.unshift({
+      id: milestone.id,
+      title: reveal.title,
+      condition: reveal.condition,
+      size: milestone.size,
+      reward,
+      legendaryBonus: legendaryBonus || '',
+      unlockedAt: new Date().toISOString()
+    });
+  }
+
+  function renderUnlockedMilestones() {
+    const log = Array.isArray(state.milestoneLog) ? state.milestoneLog : [];
+    const legacyUnlocked = (state.milestonesUnlocked || [])
+      .filter(id => !log.some(entry => entry.id === id))
+      .map(id => {
+        const milestone = MILESTONES.find(m => m.id === id);
+        if (!milestone) return null;
+        const reveal = milestoneReveal(milestone);
+        return {
+          id,
+          title: reveal.title,
+          condition: reveal.condition,
+          size: milestone.size,
+          reward: MILESTONE_REWARDS[milestone.size] || 0,
+          legendaryBonus: '',
+          unlockedAt: ''
+        };
+      }).filter(Boolean);
+    const entries = [...log, ...legacyUnlocked];
+    if (!entries.length) {
+      return '<div class="empty">No milestones unlocked yet. Hidden milestones appear here only after they trigger.</div>';
+    }
+    return `<div class="item-list milestone-list">${entries.map(entry => `
+      <div class="list-item milestone-entry">
+        <div class="text">
+          <strong>${esc(entry.title)}</strong>
+          <div class="small muted">${esc(entry.condition)}</div>
+          ${entry.legendaryBonus ? `<div class="small">Legendary Bonus: ${esc(entry.legendaryBonus)}</div>` : ''}
+        </div>
+        <div style="text-align:right;display:grid;gap:6px;justify-items:end">
+          <span class="badge ${esc(entry.size)}">${esc(entry.size)}</span>
+          <span class="price">+${formatNum(entry.reward)} Exhys</span>
+        </div>
+      </div>
+    `).join('')}</div>`;
+  }
+
   function checkHiddenMilestones() {
     const unlocked = new Set(state.milestonesUnlocked || []);
     const messages = [];
@@ -898,12 +977,14 @@ h3 { margin-bottom: 8px; }
         state.stats.totalExhysEarned = Math.round((Number(state.stats.totalExhysEarned || 0) + reward) * 10) / 10;
       }
 
+      let legendaryText = '';
       if (milestone.size === 'major') {
-        const bonusMessage = applyLegendaryBonus();
-        messages.push(`Major hidden milestone: +${reward} Exhys. ${bonusMessage}`);
+        legendaryText = applyLegendaryBonus().replace(/^Legendary Bonus:\s*/i, '');
+        messages.push(`Major milestone unlocked: +${reward} Exhys. Legendary Bonus: ${legendaryText}`);
       } else {
-        messages.push(`Hidden ${milestone.size} milestone: +${reward} Exhys.`);
+        messages.push(`${milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1)} milestone unlocked: +${reward} Exhys.`);
       }
+      recordMilestoneUnlock(milestone, reward, legendaryText);
     }
     return messages;
   }
@@ -1008,11 +1089,12 @@ h3 { margin-bottom: 8px; }
       <section class="card" style="margin-top:14px">
         <div class="card-title-row">
           <div>
-            <h2>Hidden Milestones</h2>
-            <p class="muted">Milestones are secret. When one unlocks, the app reveals only the bonus.</p>
+            <h2>Milestones</h2>
+            <p class="muted">Locked milestones stay hidden. Completed milestones appear here with what unlocked and what bonus they gave.</p>
           </div>
-          <span class="badge">Secret bonuses enabled</span>
+          <span class="badge">${state.milestonesUnlocked.length}/${MILESTONES.length} unlocked</span>
         </div>
+        ${renderUnlockedMilestones()}
       </section>
     `;
 
