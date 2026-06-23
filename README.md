@@ -135,3 +135,8 @@ Then open:
 ```text
 http://localhost:8000
 ```
+
+
+## v3 GitHub cache fix
+
+This build uses external `styles.css?v=3` and `app.js?v=3` files instead of inline code. If GitHub Pages still shows an older broken copy, open the site once with `?v=3` at the end of the URL, then hard-refresh. If it still does not update, clear site data for the GitHub Pages URL to remove the old service worker cache.
