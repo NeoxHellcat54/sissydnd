@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dressed-and-dared-v1';
+const CACHE_NAME = 'dressed-and-dared-v2';
 const ASSETS = [
   './',
   './index.html',

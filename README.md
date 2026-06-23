@@ -8,6 +8,21 @@ A GitHub-ready static PWA for rolling:
 
 The app uses local storage only. No accounts, Firebase, or backend.
 
+## Important upload note
+
+Upload the **files inside this folder** to the root of your GitHub repository:
+
+- `index.html`
+- `app.js`
+- `styles.css`
+- `manifest.json`
+- `sw.js`
+- `icons/`
+
+Do not upload a single parent folder as the only item in the repository, or GitHub Pages may not serve the app correctly from the repo root.
+
+This fixed build also has CSS and JavaScript inlined inside `index.html`, so the page is much harder to break if GitHub Pages or the browser cache misses a file.
+
 ## Current locked rules
 
 ### Outfit
@@ -90,13 +105,22 @@ Legendary:
 ## Deploy on GitHub Pages
 
 1. Create a new GitHub repository.
-2. Upload all files from this folder.
+2. Upload all files from this folder to the repository root.
 3. Open the repository settings.
 4. Go to **Pages**.
 5. Set the source to your main branch and root folder.
 6. Save.
 
 GitHub Pages will host the app as a static PWA.
+
+## If the old broken version keeps showing
+
+GitHub Pages and service workers can cache old files. After uploading this fixed build:
+
+1. Hard refresh the page.
+2. On Chrome desktop, press `Ctrl + Shift + R`.
+3. If it still looks wrong, open DevTools → Application → Storage → Clear site data, then reload.
+4. On mobile, clear the site data for the GitHub Pages URL or uninstall/reinstall the PWA shortcut.
 
 ## Local testing
 
