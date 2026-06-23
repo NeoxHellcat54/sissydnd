@@ -140,3 +140,8 @@ http://localhost:8000
 ## v3 GitHub cache fix
 
 This build uses external `styles.css?v=3` and `app.js?v=3` files instead of inline code. If GitHub Pages still shows an older broken copy, open the site once with `?v=3` at the end of the URL, then hard-refresh. If it still does not update, clear site data for the GitHub Pages URL to remove the old service worker cache.
+
+
+## v4 deployment note
+
+This build is intentionally single-file for GitHub Pages stability. The CSS and JavaScript are embedded in `index.html`, so the app still works even if external CSS/JS files are not uploaded correctly. It also unregisters older service workers and clears old `dressed-and-dared` caches to stop stale broken builds from taking over the page.
