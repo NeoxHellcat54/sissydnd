@@ -1,22 +1,33 @@
-# Dressed & Dared
+# Dressed & Dared PWA — v8
 
-A single-file GitHub Pages friendly PWA for a neon outfit/location/dare randomizer.
+GitHub Pages-ready single-file build.
 
-## Deploy
+## Files
 
-Upload these files to the root of your GitHub Pages repository:
+Upload these files to the root of your GitHub repo:
 
 - `index.html`
 - `.nojekyll`
 - `README.md`
 
-Then commit and open your GitHub Pages URL.
+## v8 changes
 
-## v7 notes
+- Upgraded shop outfit cards with rarity borders:
+  - Common: white
+  - Rare: blue
+  - Epic: pink
+  - Legendary: gold/yellow
+- Added stronger Secret Discount badges.
+- Improved roll effects so the visual roll animation changes based on the equipped/purchased effect.
+- Added extra visual feedback:
+  - roll effect burst overlay
+  - result/card animation
+  - Exhys wallet count-up animation
+  - shop purchase flash
+  - completed milestone glow
+- Added Backup & Progress Reset.
+- Progress Reset clears Exhys, purchases, shop inflation, discounts, milestones, and current roll while keeping wardrobe colors, locations, and dares.
 
-- Working single-file build.
-- Hidden milestones remain hidden until unlocked.
-- Completed milestones appear in the Milestones panel with the unlocked condition and the bonus awarded.
-- No saved rolls and no history.
-- Exhys rewards per dare remain hidden until Mark as Done.
-- Wig category uses the custom wig option list.
+## Deployment
+
+Delete the old GitHub repo files, upload the files from this ZIP, commit, then open the site with `?v=8` once to avoid cached old versions.

@@ -289,10 +289,12 @@ h3 { margin-bottom: 8px; }
   font-size: 0.78rem;
   font-weight: 800;
 }
-.badge.common { color: #e8f3ff; border-color: rgba(232,243,255,0.35); }
-.badge.rare { color: #77d9ff; border-color: rgba(119,217,255,0.38); }
-.badge.epic { color: #d899ff; border-color: rgba(216,153,255,0.44); }
-.badge.legendary { color: #ffd76b; border-color: rgba(255,215,107,0.48); }
+.badge.common { color: #ffffff; border-color: rgba(255,255,255,0.72); box-shadow: 0 0 12px rgba(255,255,255,0.08); }
+.badge.rare { color: #72d8ff; border-color: rgba(80,180,255,0.72); box-shadow: 0 0 12px rgba(80,180,255,0.14); }
+.badge.epic { color: #ff8bd7; border-color: rgba(255,80,190,0.78); box-shadow: 0 0 13px rgba(255,80,190,0.18); }
+.badge.legendary { color: #ffd85a; border-color: rgba(255,215,70,0.86); box-shadow: 0 0 16px rgba(255,215,70,0.22); }
+.badge.discount-badge { color: #fff; border-color: rgba(255,80,190,0.78); background: linear-gradient(135deg, rgba(255,20,157,0.32), rgba(255,216,90,0.14)); box-shadow: 0 0 18px rgba(255,20,157,0.22); }
+.badge.freeze-badge { color: #fff3ba; border-color: rgba(255,215,90,0.70); background: rgba(255,215,90,0.10); }
 
 .empty {
   border: 1px dashed var(--border);
@@ -366,10 +368,20 @@ h3 { margin-bottom: 8px; }
   display: grid;
   gap: 10px;
   min-height: 170px;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 .shop-item footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+.shop-item:hover { transform: translateY(-1px); }
+.shop-item.rarity-common { border-color: rgba(255,255,255,0.62); box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.10); }
+.shop-item.rarity-rare { border-color: rgba(80,180,255,0.72); box-shadow: var(--shadow), 0 0 22px rgba(80,180,255,0.13); }
+.shop-item.rarity-epic { border-color: rgba(255,80,190,0.76); box-shadow: var(--shadow), 0 0 24px rgba(255,80,190,0.18); }
+.shop-item.rarity-legendary { border-color: rgba(255,215,70,0.90); box-shadow: var(--shadow), 0 0 28px rgba(255,215,70,0.22); }
+.shop-item.rarity-legendary::before { background: linear-gradient(135deg, rgba(255,215,70,0.14), transparent 42%, rgba(255,20,157,0.08)); }
+.shop-item.discounted { border-style: solid; }
 .price { color: var(--good); font-weight: 900; }
 .owned { color: var(--accent-3); font-weight: 900; }
+.purchase-flash { animation: purchaseFlash 900ms ease both; }
+@keyframes purchaseFlash { 0% { transform: scale(0.985); } 45% { transform: scale(1.018); box-shadow: 0 0 45px rgba(var(--accent-rgb),0.44), 0 0 70px rgba(var(--accent-2-rgb),0.25); } 100% { transform: scale(1); } }
 
 .bottom-nav {
   position: fixed;
@@ -423,18 +435,49 @@ h3 { margin-bottom: 8px; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-.pulse-roll { animation: pulseRoll 420ms ease both; }
-@keyframes pulseRoll { 0% { transform: scale(0.99); } 45% { transform: scale(1.012); box-shadow: 0 0 40px rgba(var(--accent-rgb), 0.35); } 100% { transform: scale(1); } }
-.effect-neon { animation: neonFlash 800ms ease both; }
-@keyframes neonFlash { 0%,100% { filter: none; } 35% { filter: drop-shadow(0 0 22px var(--accent)); } 60% { filter: drop-shadow(0 0 28px var(--accent-3)); } }
-.effect-heart { animation: heartBurst 780ms ease both; }
-@keyframes heartBurst { 0% { transform: scale(0.98); } 45% { transform: scale(1.018) rotate(-0.4deg); } 100% { transform: scale(1) rotate(0); } }
-.effect-glitch { animation: glitchRoll 680ms steps(2, end) both; }
-@keyframes glitchRoll { 0%, 100% { transform: translate(0,0); } 20% { transform: translate(2px,-1px); } 40% { transform: translate(-2px,1px); } 60% { transform: translate(1px,2px); } 80% { transform: translate(-1px,-2px); } }
-.effect-sparkle { animation: sparkleRoll 850ms ease both; }
-@keyframes sparkleRoll { 0% { box-shadow: var(--shadow); } 50% { box-shadow: 0 0 18px var(--accent), 0 0 55px var(--accent-3); } 100% { box-shadow: var(--shadow); } }
-.effect-vip { animation: vipFlash 900ms ease both; }
-@keyframes vipFlash { 0%,100% { outline: 0 solid transparent; } 50% { outline: 3px solid var(--accent); box-shadow: 0 0 50px var(--accent); } }
+.pulse-roll { animation: pulseRoll 520ms ease both; }
+@keyframes pulseRoll { 0% { transform: scale(0.99); } 45% { transform: scale(1.014); box-shadow: 0 0 40px rgba(var(--accent-rgb), 0.35); } 100% { transform: scale(1); } }
+.effect-neon { animation: neonFlash 920ms ease both; }
+@keyframes neonFlash { 0%,100% { filter: none; } 25% { filter: brightness(1.25) drop-shadow(0 0 18px var(--accent)); } 55% { filter: brightness(1.4) drop-shadow(0 0 34px var(--accent-3)); } }
+.effect-heart { animation: heartBurst 900ms ease both; }
+@keyframes heartBurst { 0% { transform: scale(0.98); } 40% { transform: scale(1.022) rotate(-0.5deg); box-shadow: 0 0 36px rgba(255,133,213,0.24); } 100% { transform: scale(1) rotate(0); } }
+.effect-glitch { animation: glitchRoll 760ms steps(2, end) both; }
+@keyframes glitchRoll { 0%, 100% { transform: translate(0,0); filter: none; } 16% { transform: translate(3px,-1px); filter: hue-rotate(30deg); } 32% { transform: translate(-3px,1px); filter: hue-rotate(-35deg); } 48% { transform: translate(2px,2px); } 64% { transform: translate(-2px,-2px); } 80% { transform: translate(1px,-1px); } }
+.effect-sparkle { animation: sparkleRoll 1000ms ease both; }
+@keyframes sparkleRoll { 0% { box-shadow: var(--shadow); } 50% { box-shadow: 0 0 20px var(--accent), 0 0 65px var(--accent-3); } 100% { box-shadow: var(--shadow); } }
+.effect-vip { animation: vipFlash 1050ms ease both; }
+@keyframes vipFlash { 0%,100% { outline: 0 solid transparent; } 45% { outline: 3px solid #ffd85a; box-shadow: 0 0 38px #ffd85a, 0 0 72px rgba(255,20,157,0.26); } }
+.roll-fx-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+.roll-fx-stage.show { opacity: 1; }
+.roll-fx-stage span {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  font-size: var(--size, 1.2rem);
+  font-weight: 1000;
+  color: var(--fx-color, var(--accent-3));
+  text-shadow: 0 0 12px currentColor, 0 0 28px currentColor;
+  animation: fxFloat 1050ms ease-out both;
+}
+@keyframes fxFloat { 0% { opacity: 0; transform: translateY(10px) scale(0.7) rotate(-8deg); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-56px) scale(1.26) rotate(12deg); } }
+.roll-fx-stage.fx-basic { --fx-color: var(--accent-3); }
+.roll-fx-stage.fx-neon { --fx-color: #61f7ff; }
+.roll-fx-stage.fx-heart { --fx-color: #ff85d5; }
+.roll-fx-stage.fx-glitch { --fx-color: #76f7ff; }
+.roll-fx-stage.fx-sparkle { --fx-color: #ffffff; }
+.roll-fx-stage.fx-vip { --fx-color: #ffd85a; }
+.wallet.bump { animation: walletBump 850ms ease both; }
+@keyframes walletBump { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-2px) scale(1.04); box-shadow: 0 0 28px rgba(var(--accent-rgb),0.35); } 100% { transform: translateY(0) scale(1); } }
+.milestone-entry.major, .milestone-entry.legendary-entry { border-color: rgba(255,215,70,0.55); box-shadow: 0 0 22px rgba(255,215,70,0.13); }
+.milestone-entry.new-pop { animation: newMilestonePop 900ms ease both; }
+@keyframes newMilestonePop { 0% { transform: scale(0.97); opacity: 0.4; } 45% { transform: scale(1.015); opacity: 1; box-shadow: 0 0 32px rgba(var(--accent-rgb),0.35); } 100% { transform: scale(1); } }
 
 @media (display-mode: standalone) {
   .app-shell { padding-top: max(22px, env(safe-area-inset-top)); }
@@ -616,6 +659,8 @@ h3 { margin-bottom: 8px; }
   let state = loadState();
   let activeView = 'home';
   let activeShopTab = 'themes';
+  let lastShopFlashId = null;
+  let lastMilestoneFlashId = null;
 
   const views = {
     home: document.getElementById('view-home'),
@@ -948,7 +993,7 @@ h3 { margin-bottom: 8px; }
       return '<div class="empty">No milestones unlocked yet. Hidden milestones appear here only after they trigger.</div>';
     }
     return `<div class="item-list milestone-list">${entries.map(entry => `
-      <div class="list-item milestone-entry">
+      <div class="list-item milestone-entry ${entry.size === 'major' ? 'major legendary-entry' : ''} ${entry.id === lastMilestoneFlashId ? 'new-pop' : ''}">
         <div class="text">
           <strong>${esc(entry.title)}</strong>
           <div class="small muted">${esc(entry.condition)}</div>
@@ -984,6 +1029,7 @@ h3 { margin-bottom: 8px; }
       } else {
         messages.push(`${milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1)} milestone unlocked: +${reward} Exhys.`);
       }
+      lastMilestoneFlashId = milestone.id;
       recordMilestoneUnlock(milestone, reward, legendaryText);
     }
     return messages;
@@ -1024,6 +1070,27 @@ h3 { margin-bottom: 8px; }
     messages.filter(Boolean).forEach((message, index) => setTimeout(() => toast(message), index * 1700));
   }
 
+  function animateExhysBalance(from, to) {
+    const balance = document.getElementById('exhysBalance');
+    const wallet = document.querySelector('.wallet');
+    if (!balance || from === to) return;
+    const start = Number(from || 0);
+    const end = Number(to || 0);
+    const duration = 850;
+    const started = performance.now();
+    wallet?.classList.remove('bump');
+    void wallet?.offsetWidth;
+    wallet?.classList.add('bump');
+    function tick(now) {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      balance.textContent = formatNum(start + ((end - start) * eased));
+      if (t < 1) requestAnimationFrame(tick);
+      else balance.textContent = formatNum(end);
+    }
+    requestAnimationFrame(tick);
+  }
+
   function render() {
     saveState();
     renderNav();
@@ -1051,6 +1118,7 @@ h3 { margin-bottom: 8px; }
     views.home.innerHTML = `
       <div class="grid two">
         <section class="card hero" id="rollCard">
+          <div id="rollFxStage" class="roll-fx-stage" aria-hidden="true"></div>
           <div class="card-title-row">
             <div>
               <h2>Roll Full Dare</h2>
@@ -1217,31 +1285,58 @@ h3 { margin-bottom: 8px; }
     });
   }
 
-  function activeRollEffectClass() {
+  function activeRollEffect() {
     const ownedEffects = SHOP_ITEMS.filter(item => item.kind === 'effect' && isOwned(item.id));
     let effect = SHOP_ITEMS.find(item => item.id === state.activeEffect) || SHOP_ITEMS.find(item => item.id === 'effect-basic');
     if (state.randomEffect && ownedEffects.length) effect = choice(ownedEffects);
-    return effect.effectClass || 'pulse-roll';
+    return effect || SHOP_ITEMS.find(item => item.id === 'effect-basic');
+  }
+
+  function effectVisual(effect) {
+    const id = effect?.id || 'effect-basic';
+    if (id === 'effect-neon') return { fx: 'fx-neon', symbols: ['◆','◇','✦','NEON','◆','✦'] };
+    if (id === 'effect-heart') return { fx: 'fx-heart', symbols: ['♥','♡','♥','♡','♥','♡'] };
+    if (id === 'effect-glitch') return { fx: 'fx-glitch', symbols: ['#','X','//','404','◆','!!'] };
+    if (id === 'effect-sparkle') return { fx: 'fx-sparkle', symbols: ['✦','✧','✶','✦','✧','✶'] };
+    if (id === 'effect-vip') return { fx: 'fx-vip', symbols: ['★','VIP','✦','♛','★','✦'] };
+    return { fx: 'fx-basic', symbols: ['◆','◇','◆','◇','✦'] };
   }
 
   function animateRoll() {
     const card = document.getElementById('rollCard');
     const result = document.querySelector('#currentResult .result-grid');
-    const cls = activeRollEffectClass();
+    const stage = document.getElementById('rollFxStage');
+    const effect = activeRollEffect();
+    const cls = effect?.effectClass || 'pulse-roll';
     [card, result].forEach(el => {
       if (!el) return;
       el.classList.remove('pulse-roll', 'effect-neon', 'effect-heart', 'effect-glitch', 'effect-sparkle', 'effect-vip');
       void el.offsetWidth;
       el.classList.add(cls);
-      setTimeout(() => el.classList.remove(cls), 950);
+      setTimeout(() => el.classList.remove(cls), 1150);
     });
+    if (stage) {
+      const visual = effectVisual(effect);
+      stage.className = `roll-fx-stage show ${visual.fx}`;
+      stage.innerHTML = visual.symbols.map((symbol, index) => {
+        const x = 10 + ((index * 17) % 78);
+        const y = 22 + ((index * 23) % 54);
+        const size = 1 + ((index % 3) * 0.28);
+        return `<span style="--x:${x}%;--y:${y}%;--size:${size}rem">${esc(symbol)}</span>`;
+      }).join('');
+      setTimeout(() => { stage.className = 'roll-fx-stage'; stage.innerHTML = ''; }, 1150);
+    }
+    const rollMessage = document.getElementById('rollMessage');
+    if (rollMessage) rollMessage.textContent = `${effect?.name || 'Basic Dice'} effect triggered.`;
   }
 
   function markDone() {
     const roll = state.currentRoll;
     if (!roll || roll.done) return;
     roll.done = true;
-    state.exhys = Math.round((state.exhys + roll.totalReward) * 10) / 10;
+    const oldExhys = Number(state.exhys || 0);
+    const newExhys = Math.round((oldExhys + roll.totalReward) * 10) / 10;
+    state.exhys = newExhys;
 
     state.stats.completedRolls += 1;
     state.stats.completedDares += roll.dares.length;
@@ -1255,6 +1350,7 @@ h3 { margin-bottom: 8px; }
 
     const milestoneMessages = checkHiddenMilestones();
     render();
+    animateExhysBalance(oldExhys, newExhys);
     queueToasts([`Claimed ${formatNum(roll.totalReward)} Exhys.`, ...milestoneMessages]);
   }
 
@@ -1373,13 +1469,13 @@ h3 { margin-bottom: 8px; }
       <section class="card" style="margin-top:14px">
         <div class="card-title-row">
           <div>
-            <h2>Backup</h2>
-            <p class="muted">Export or import all local app data as JSON.</p>
+            <h2>Backup &amp; Progress Reset</h2>
+            <p class="muted">Export/import local data. Reset Progress clears Exhys, purchases, shop inflation, discounts, milestones, and current roll, but keeps wardrobe colors, locations, and dares.</p>
           </div>
           <div class="roll-controls">
             <button class="btn" id="exportBtn">Export JSON</button>
             <button class="btn" id="importBtn">Import JSON</button>
-            <button class="btn danger" id="resetAllBtn">Reset App</button>
+            <button class="btn danger" id="resetProgressBtn">Reset Progress</button>
           </div>
         </div>
       </section>
@@ -1394,7 +1490,7 @@ h3 { margin-bottom: 8px; }
     document.querySelectorAll('[data-delete-list]').forEach(btn => btn.addEventListener('click', () => deleteListItem(btn.dataset.type, btn.dataset.id)));
     document.getElementById('exportBtn')?.addEventListener('click', exportJson);
     document.getElementById('importBtn')?.addEventListener('click', importJson);
-    document.getElementById('resetAllBtn')?.addEventListener('click', resetAll);
+    document.getElementById('resetProgressBtn')?.addEventListener('click', resetProgressKeepSettings);
   }
 
   function renderEditableItem(item, type) {
@@ -1441,7 +1537,7 @@ h3 { margin-bottom: 8px; }
           <div class="grid" style="gap:6px;text-align:right">
             <span class="badge">Inflation steps: ${state.totalPurchases}</span>
             <span class="badge">Inflation: ×${Math.pow(1.1, state.totalPurchases).toFixed(3)}</span>
-            ${state.priceFreezes ? `<span class="badge">Price Freeze: ${state.priceFreezes}</span>` : ''}
+            ${state.priceFreezes ? `<span class="badge freeze-badge">Price Freeze: ${state.priceFreezes}</span>` : ''}
           </div>
         </div>
         <div class="shop-tabs">
@@ -1510,8 +1606,12 @@ h3 { margin-bottom: 8px; }
       action = `<span class="owned">Owned</span>`;
     }
 
+    const rarityClass = item.kind === 'outfit' ? ` rarity-${item.rarity}` : '';
+    const discountClass = discount && !owned ? ' discounted' : '';
+    const flashClass = item.id === lastShopFlashId ? ' purchase-flash' : '';
+
     return `
-      <section class="card compact shop-item">
+      <section class="card compact shop-item${rarityClass}${discountClass}${flashClass}" data-shop-card="${esc(item.id)}">
         <div class="card-title-row">
           <div>
             <h3>${esc(item.name)}</h3>
@@ -1520,7 +1620,7 @@ h3 { margin-bottom: 8px; }
           ${owned ? '<span class="badge">Owned</span>' : ''}
         </div>
         <p class="muted small">${esc(description || '')}</p>
-        ${discount && !owned ? `<p class="small"><span class="badge">Secret Discount · 50% off</span></p>` : ''}
+        ${discount && !owned ? `<p class="small"><span class="badge discount-badge">Secret Discount · 50% off</span></p>` : ''}
         <footer>
           <span class="price">${owned ? 'Purchased' : `${formatNum(price)} Exhys${discount ? ` <small class="muted"><s>${formatNum(fullPrice)}</s></small>` : ''}`}</span>
           ${action}
@@ -1559,7 +1659,9 @@ h3 { margin-bottom: 8px; }
     if (item.kind === 'effect') state.activeEffect = id;
 
     const milestoneMessages = checkHiddenMilestones();
+    lastShopFlashId = id;
     render();
+    setTimeout(() => { lastShopFlashId = null; }, 1100);
     const inflationText = usedPriceFreeze ? 'Price Freeze used. Future prices did not increase.' : 'Future shop prices increased by 10%.';
     queueToasts([`Purchased ${item.name}. ${inflationText}`, ...milestoneMessages]);
   }
@@ -1614,13 +1716,23 @@ h3 { margin-bottom: 8px; }
     input.click();
   }
 
-  function resetAll() {
-    if (!confirm('Reset all app data on this device?')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    state = createDefaultState();
+  function resetProgressKeepSettings() {
+    if (!confirm('Reset progress? This clears Exhys, purchases, shop prices, discounts, milestones, and current roll, but keeps wardrobe colors, locations, and dares.')) return;
+    const keptWardrobe = JSON.parse(JSON.stringify(state.wardrobe || {}));
+    const keptLocations = JSON.parse(JSON.stringify(state.locations || []));
+    const keptDares = JSON.parse(JSON.stringify(state.dares || []));
+    const keptDareCount = Number(state.dareCount || 1);
+    const fresh = createDefaultState();
+    state = migrateState({
+      ...fresh,
+      wardrobe: keptWardrobe,
+      locations: keptLocations,
+      dares: keptDares,
+      dareCount: keptDareCount
+    });
     activeView = 'home';
     activeShopTab = 'themes';
-    toast('App reset.');
+    toast('Progress reset. Settings, locations, and dares kept.');
     render();
   }
 
