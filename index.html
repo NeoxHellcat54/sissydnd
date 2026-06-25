@@ -519,6 +519,31 @@ h3 { margin-bottom: 8px; }
   overflow:auto;
 }
 
+
+/* v10 training system */
+.top-wallets { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; justify-content: flex-end; }
+.obedience-wallet { border-color: rgba(54,245,255,0.38); box-shadow: 0 0 22px rgba(54,245,255,0.10); }
+.training-summary { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
+.training-stat { border: 1px solid var(--border); border-radius: 16px; padding: 12px; background: rgba(0,0,0,0.18); }
+.training-stat strong { display:block; font-size:1.25rem; }
+.training-category { position: relative; overflow: hidden; }
+.training-category::before { content:''; position:absolute; inset:0; background: radial-gradient(circle at top right, rgba(var(--accent-rgb),0.12), transparent 45%); pointer-events:none; }
+.training-category > * { position: relative; }
+.offer-box, .active-task-box, .task-editor-box, .upgrade-box { border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.18); border-radius: 18px; padding: 12px; margin-top: 12px; }
+.offer-box { border-color: rgba(54,245,255,0.30); box-shadow: 0 0 18px rgba(54,245,255,0.08); }
+.active-task-box { border-color: rgba(255,216,90,0.36); box-shadow: 0 0 18px rgba(255,216,90,0.09); }
+.training-task-list { display:grid; gap:8px; margin-top:10px; }
+.training-task-row { display:flex; align-items:center; gap:8px; padding:8px; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(255,255,255,0.035); }
+.training-task-row input[type='text'] { flex:1; min-width: 0; }
+.timer-display { font-size: 1.8rem; font-weight: 900; letter-spacing: 0.04em; color: var(--warn); text-shadow: 0 0 18px rgba(255,211,110,0.25); margin: 8px 0; }
+.category-pill-row { display:flex; gap:8px; flex-wrap:wrap; }
+.conversion-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+.upgrade-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:12px; }
+.upgrade-box footer { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:10px; }
+.milestone-entry.training-milestone { border-color: rgba(54,245,255,0.28); }
+.price.obedience-price, .obedience-text { color: var(--accent-3); text-shadow: 0 0 14px rgba(54,245,255,0.18); }
+@media (max-width: 720px) { .training-summary, .upgrade-grid { grid-template-columns: 1fr; } .top-wallets { width:100%; justify-content:space-between; } .top-wallets .wallet { flex:1; min-width: 0; } }
+
   </style>
 </head>
 <body class="theme-neon">
@@ -528,11 +553,20 @@ h3 { margin-bottom: 8px; }
         <p class="eyebrow">Neon Dressing Room</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
-      <div class="wallet" title="Exhys balance">
-        <span class="wallet-icon">✦</span>
-        <div>
-          <strong id="exhysBalance">0</strong>
-          <small>Exhys</small>
+      <div class="top-wallets">
+        <div class="wallet" title="Exhys balance">
+          <span class="wallet-icon">✦</span>
+          <div>
+            <strong id="exhysBalance">0</strong>
+            <small>Exhys</small>
+          </div>
+        </div>
+        <div class="wallet obedience-wallet" title="Obedience balance">
+          <span class="wallet-icon">◆</span>
+          <div>
+            <strong id="obedienceBalance">0</strong>
+            <small>Obedience</small>
+          </div>
         </div>
       </div>
     </header>
@@ -545,6 +579,7 @@ h3 { margin-bottom: 8px; }
         </section>
       </section>
       <section id="view-wardrobe" class="view"></section>
+      <section id="view-training" class="view"></section>
       <section id="view-lists" class="view"></section>
       <section id="view-shop" class="view"></section>
     </main>
@@ -552,6 +587,7 @@ h3 { margin-bottom: 8px; }
     <nav class="bottom-nav" aria-label="Main navigation">
       <button class="nav-btn active" type="button" data-view="home"><span>◆</span>Home</button>
       <button class="nav-btn" type="button" data-view="wardrobe"><span>◇</span>Wardrobe</button>
+      <button class="nav-btn" type="button" data-view="training"><span>◆</span>Training</button>
       <button class="nav-btn" type="button" data-view="lists"><span>✚</span>Lists</button>
       <button class="nav-btn" type="button" data-view="shop"><span>✦</span>Shop</button>
     </nav>
@@ -656,6 +692,18 @@ h3 { margin-bottom: 8px; }
     'Count to 100 before leaving.'
   ];
 
+  const TRAINING_CATEGORIES = ['Chastity', 'Anal', 'Oral', 'Bondage', 'Dress Up', 'Chores', 'Exposure'];
+  const USER_TASK_TRAINING_CATEGORIES = ['Anal', 'Oral', 'Bondage', 'Chores', 'Exposure'];
+
+  const TRAINING_UPGRADES = [
+    { id: 'extraRerolls', name: 'Extra Rerolls', baseCost: 2000, description: '+1 free reroll per level. Applies to each category on the next fresh offer cycle.' },
+    { id: 'obedienceMultiplier', name: 'Obedience Multiplier', baseCost: 2500, description: '+10% guaranteed Obedience reward per level.' },
+    { id: 'betterOffers', name: 'Better Offers', baseCost: 3000, description: 'Improves the offer curve so better Obedience offers become more likely.' },
+    { id: 'trainingLuck', name: 'Training Luck', baseCost: 3500, description: '+10% chance per level for +100 Obedience on completion.' }
+  ];
+
+  const TRAINING_MILESTONE_REWARDS = { small: 250, medium: 750, big: 1500, major: 3000 };
+
   let state = loadState();
   let activeView = 'home';
   let activeShopTab = 'themes';
@@ -665,6 +713,7 @@ h3 { margin-bottom: 8px; }
   const views = {
     home: document.getElementById('view-home'),
     wardrobe: document.getElementById('view-wardrobe'),
+    training: document.getElementById('view-training'),
     lists: document.getElementById('view-lists'),
     shop: document.getElementById('view-shop')
   };
@@ -677,6 +726,7 @@ h3 { margin-bottom: 8px; }
     return {
       version: 1,
       exhys: 0,
+      obedience: 0,
       totalPurchases: 0,
       activeTheme: 'theme-neon',
       activeEffect: 'effect-basic',
@@ -691,7 +741,8 @@ h3 { margin-bottom: 8px; }
       milestoneLog: [],
       discounts: {},
       priceFreezes: 0,
-      stats: createDefaultStats()
+      stats: createDefaultStats(),
+      training: createDefaultTrainingState()
     };
   }
 
@@ -713,6 +764,49 @@ h3 { margin-bottom: 8px; }
       randomOutfitCompletions: 0,
       matchingOutfitCompletions: 0,
       mixedOutfitCompletions: 0
+    };
+  }
+
+  function createDefaultTrainingState() {
+    const categories = {};
+    TRAINING_CATEGORIES.forEach(category => {
+      categories[category] = { tasks: [], offer: null, active: null };
+    });
+    return {
+      categories,
+      upgrades: { extraRerolls: 0, obedienceMultiplier: 0, betterOffers: 0, trainingLuck: 0 },
+      milestonesUnlocked: [],
+      milestoneLog: [],
+      stats: createDefaultTrainingStats()
+    };
+  }
+
+  function createDefaultTrainingStats() {
+    return {
+      offersRolled: 0,
+      offersAccepted: 0,
+      autoAcceptedOffers: 0,
+      rerollsUsed: 0,
+      tasksCompleted: 0,
+      totalObedienceEarned: 0,
+      highestBaseReward: 0,
+      highestFinalReward: 0,
+      obedienceConverted: 0,
+      exhysFromObedience: 0,
+      upgradesBought: 0,
+      luckBonusesTriggered: 0,
+      luckBonusObedience: 0,
+      dressUpGenerated: 0,
+      chastityOffersRolled: 0,
+      chastityCompleted: 0,
+      chastityNoCount: 0,
+      chastityTotalMinutes: 0,
+      analCompleted: 0,
+      oralCompleted: 0,
+      bondageCompleted: 0,
+      dressUpCompleted: 0,
+      choresCompleted: 0,
+      exposureCompleted: 0
     };
   }
 
@@ -765,13 +859,37 @@ h3 { margin-bottom: 8px; }
     merged.purchased = Array.from(new Set([...(merged.purchased || []), 'theme-neon', 'effect-basic']));
     merged.totalPurchases = Number(merged.totalPurchases || 0);
     merged.exhys = Number(merged.exhys || 0);
+    merged.obedience = Number(merged.obedience || 0);
     merged.dareCount = Number(merged.dareCount || 1);
     merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
     merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
     merged.discounts = merged.discounts && typeof merged.discounts === 'object' ? merged.discounts : {};
     merged.priceFreezes = Number(merged.priceFreezes || 0);
     merged.stats = { ...createDefaultStats(), ...(merged.stats || {}) };
+    merged.training = migrateTrainingState(merged.training);
     // Older builds had local history/saved rolls. Keep imported data valid, but do not render or use it.
+    return merged;
+  }
+
+  function migrateTrainingState(training) {
+    const fresh = createDefaultTrainingState();
+    const merged = { ...fresh, ...(training || {}) };
+    merged.categories = { ...fresh.categories, ...(training?.categories || {}) };
+    TRAINING_CATEGORIES.forEach(category => {
+      const current = merged.categories[category] || {};
+      merged.categories[category] = {
+        tasks: Array.isArray(current.tasks) ? current.tasks : [],
+        offer: current.offer || null,
+        active: current.active || null
+      };
+    });
+    merged.upgrades = { ...fresh.upgrades, ...(merged.upgrades || {}) };
+    TRAINING_UPGRADES.forEach(upgrade => {
+      merged.upgrades[upgrade.id] = Math.max(0, Number(merged.upgrades[upgrade.id] || 0));
+    });
+    merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
+    merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
+    merged.stats = { ...createDefaultTrainingStats(), ...(merged.stats || {}) };
     return merged;
   }
 
@@ -779,6 +897,8 @@ h3 { margin-bottom: 8px; }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateBodyTheme();
     document.getElementById('exhysBalance').textContent = formatNum(state.exhys);
+    const obedienceEl = document.getElementById('obedienceBalance');
+    if (obedienceEl) obedienceEl.textContent = formatNum(state.obedience);
   }
 
   function updateBodyTheme() {
@@ -873,7 +993,7 @@ h3 { margin-bottom: 8px; }
     return items.filter(item => item.enabled && item.text.trim());
   }
 
-  const MILESTONE_REWARDS = { small: 50, medium: 100, big: 175, major: 250 };
+  const MILESTONE_REWARDS = { small: 37.5, medium: 75, big: 131.25, major: 187.5 };
   const MILESTONES = buildHiddenMilestones();
 
   function buildHiddenMilestones() {
@@ -971,9 +1091,9 @@ h3 { margin-bottom: 8px; }
   }
 
   function renderUnlockedMilestones() {
-    const log = Array.isArray(state.milestoneLog) ? state.milestoneLog : [];
+    const mainLog = Array.isArray(state.milestoneLog) ? state.milestoneLog.map(entry => ({ ...entry, type: 'Main', currency: 'Exhys' })) : [];
     const legacyUnlocked = (state.milestonesUnlocked || [])
-      .filter(id => !log.some(entry => entry.id === id))
+      .filter(id => !mainLog.some(entry => entry.id === id))
       .map(id => {
         const milestone = MILESTONES.find(m => m.id === id);
         if (!milestone) return null;
@@ -985,23 +1105,29 @@ h3 { margin-bottom: 8px; }
           size: milestone.size,
           reward: MILESTONE_REWARDS[milestone.size] || 0,
           legendaryBonus: '',
-          unlockedAt: ''
+          unlockedAt: '',
+          type: 'Main',
+          currency: 'Exhys'
         };
       }).filter(Boolean);
-    const entries = [...log, ...legacyUnlocked];
+    const trainingLog = Array.isArray(state.training?.milestoneLog)
+      ? state.training.milestoneLog.map(entry => ({ ...entry, type: 'Training', currency: 'Obedience' }))
+      : [];
+    const entries = [...mainLog, ...legacyUnlocked, ...trainingLog]
+      .sort((a, b) => String(b.unlockedAt || '').localeCompare(String(a.unlockedAt || '')));
     if (!entries.length) {
       return '<div class="empty">No milestones unlocked yet. Hidden milestones appear here only after they trigger.</div>';
     }
     return `<div class="item-list milestone-list">${entries.map(entry => `
-      <div class="list-item milestone-entry ${entry.size === 'major' ? 'major legendary-entry' : ''} ${entry.id === lastMilestoneFlashId ? 'new-pop' : ''}">
+      <div class="list-item milestone-entry ${entry.type === 'Training' ? 'training-milestone' : ''} ${entry.size === 'major' ? 'major legendary-entry' : ''} ${entry.id === lastMilestoneFlashId ? 'new-pop' : ''}">
         <div class="text">
-          <strong>${esc(entry.title)}</strong>
+          <strong>${esc(entry.type)} · ${esc(entry.title)}</strong>
           <div class="small muted">${esc(entry.condition)}</div>
           ${entry.legendaryBonus ? `<div class="small">Legendary Bonus: ${esc(entry.legendaryBonus)}</div>` : ''}
         </div>
         <div style="text-align:right;display:grid;gap:6px;justify-items:end">
           <span class="badge ${esc(entry.size)}">${esc(entry.size)}</span>
-          <span class="price">+${formatNum(entry.reward)} Exhys</span>
+          <span class="price ${entry.currency === 'Obedience' ? 'obedience-price' : ''}">+${formatNum(entry.reward)} ${esc(entry.currency)}</span>
         </div>
       </div>
     `).join('')}</div>`;
@@ -1066,6 +1192,124 @@ h3 { margin-bottom: 8px; }
     return `Legendary Bonus: your next purchase will not increase prices.`;
   }
 
+
+  const TRAINING_MILESTONES = buildHiddenTrainingMilestones();
+
+  function buildHiddenTrainingMilestones() {
+    const list = [];
+    const add = (size, stat, threshold) => list.push({ id: `tm${String(list.length + 1).padStart(3, '0')}`, size, stat, threshold });
+
+    [1,2,3,4,5,6,7,8,9,10].forEach(n => add('small', 'tasksCompleted', n));
+    [1,2,3,4,5].forEach(n => add('small', 'offersAccepted', n));
+    [1,2,3,4,5].forEach(n => add('small', 'rerollsUsed', n));
+    [50,100,200,300,500,750,1000,1500].forEach(n => add('small', 'totalObedienceEarned', n));
+    [1,2,3,4].forEach(n => add('small', 'trainingTaskListsWithItems', n));
+    [1,2,3,4].forEach(n => add('small', 'trainingCategoriesCompleted', n));
+    [1,2,3].forEach(n => add('small', 'upgradesBought', n));
+    [1,2,3].forEach(n => add('small', 'dressUpGenerated', n));
+    [1,2,3].forEach(n => add('small', 'chastityOffersRolled', n));
+
+    [15,20,25,30,40,50,65,80].forEach(n => add('medium', 'tasksCompleted', n));
+    [10,15,20,30,40].forEach(n => add('medium', 'offersAccepted', n));
+    [2500,4000,6000,8000,10000,15000].forEach(n => add('medium', 'totalObedienceEarned', n));
+    [500,1000].forEach(n => add('medium', 'highestFinalReward', n));
+    [5,8,10].forEach(n => add('medium', 'upgradesBought', n));
+    [1,2].forEach(n => add('medium', 'chastityCompleted', n));
+    [1,2].forEach(n => add('medium', 'luckBonusesTriggered', n));
+    [1,2].forEach(n => add('medium', 'autoAcceptedOffers', n));
+
+    [100,150,200,300].forEach(n => add('big', 'tasksCompleted', n));
+    [25000,40000,60000].forEach(n => add('big', 'totalObedienceEarned', n));
+    [1500,2500].forEach(n => add('big', 'highestFinalReward', n));
+    [15,25].forEach(n => add('big', 'upgradesBought', n));
+    [5,10].forEach(n => add('big', 'chastityCompleted', n));
+    [5,10].forEach(n => add('big', 'luckBonusesTriggered', n));
+
+    [500,1000].forEach(n => add('major', 'tasksCompleted', n));
+    [100000,250000].forEach(n => add('major', 'totalObedienceEarned', n));
+    [3500,5000].forEach(n => add('major', 'highestFinalReward', n));
+    [50].forEach(n => add('major', 'upgradesBought', n));
+    [25].forEach(n => add('major', 'chastityCompleted', n));
+    [25].forEach(n => add('major', 'luckBonusesTriggered', n));
+    [50].forEach(n => add('major', 'autoAcceptedOffers', n));
+
+    return list;
+  }
+
+  function trainingStatValue(stat) {
+    const training = state.training || createDefaultTrainingState();
+    const stats = training.stats || createDefaultTrainingStats();
+    if (stat === 'trainingTaskListsWithItems') {
+      return USER_TASK_TRAINING_CATEGORIES.filter(category => (training.categories?.[category]?.tasks || []).some(task => task.enabled && task.text.trim())).length;
+    }
+    if (stat === 'trainingCategoriesCompleted') {
+      return ['Chastity','Anal','Oral','Bondage','Dress Up','Chores','Exposure'].filter(category => Number(stats[categoryStatKey(category)] || 0) > 0).length;
+    }
+    return Number(stats[stat] || 0);
+  }
+
+  function trainingMilestoneReveal(milestone) {
+    const stat = milestone.stat;
+    const n = milestone.threshold;
+    const labels = {
+      tasksCompleted: n === 1 ? 'Complete your first training task' : `Complete ${n} training tasks`,
+      offersAccepted: n === 1 ? 'Accept your first training offer' : `Accept ${n} training offers`,
+      rerollsUsed: n === 1 ? 'Use your first training reroll' : `Use ${n} training rerolls`,
+      totalObedienceEarned: `Earn ${formatNum(n)} total Obedience`,
+      trainingTaskListsWithItems: `Add enabled tasks to ${n} training categories`,
+      trainingCategoriesCompleted: `Complete tasks in ${n} different training categories`,
+      upgradesBought: n === 1 ? 'Buy your first training upgrade' : `Buy ${n} training upgrades`,
+      dressUpGenerated: n === 1 ? 'Roll your first Dress Up training offer' : `Roll ${n} Dress Up training offers`,
+      chastityOffersRolled: n === 1 ? 'Roll your first Chastity offer' : `Roll ${n} Chastity offers`,
+      highestFinalReward: `Complete a training task worth ${formatNum(n)}+ Obedience`,
+      chastityCompleted: n === 1 ? 'Complete your first Chastity timer' : `Complete ${n} Chastity timers`,
+      luckBonusesTriggered: n === 1 ? 'Trigger your first Training Luck bonus' : `Trigger ${n} Training Luck bonuses`,
+      autoAcceptedOffers: n === 1 ? 'Auto-accept your first final reroll offer' : `Auto-accept ${n} final reroll offers`,
+      exhysFromObedience: `Convert ${formatNum(n)} Exhys from Obedience`
+    };
+    const sizeName = milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1);
+    return { title: `${sizeName} Training Milestone`, condition: labels[stat] || `Reach ${formatNum(n)} ${stat}` };
+  }
+
+  function checkTrainingMilestones() {
+    const training = state.training || createDefaultTrainingState();
+    const unlocked = new Set(training.milestonesUnlocked || []);
+    const messages = [];
+    for (const milestone of TRAINING_MILESTONES) {
+      if (unlocked.has(milestone.id)) continue;
+      if (trainingStatValue(milestone.stat) < milestone.threshold) continue;
+      unlocked.add(milestone.id);
+      training.milestonesUnlocked.push(milestone.id);
+      const reward = TRAINING_MILESTONE_REWARDS[milestone.size] || 0;
+      state.obedience = Math.round((Number(state.obedience || 0) + reward) * 10) / 10;
+      training.stats.totalObedienceEarned = Math.round((Number(training.stats.totalObedienceEarned || 0) + reward) * 10) / 10;
+      const reveal = trainingMilestoneReveal(milestone);
+      training.milestoneLog.unshift({
+        id: milestone.id,
+        title: reveal.title,
+        condition: reveal.condition,
+        size: milestone.size,
+        reward,
+        unlockedAt: new Date().toISOString()
+      });
+      lastMilestoneFlashId = milestone.id;
+      messages.push(`${milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1)} training milestone unlocked: +${formatNum(reward)} Obedience.`);
+    }
+    return messages;
+  }
+
+  function categoryStatKey(category) {
+    return {
+      Chastity: 'chastityCompleted',
+      Anal: 'analCompleted',
+      Oral: 'oralCompleted',
+      Bondage: 'bondageCompleted',
+      'Dress Up': 'dressUpCompleted',
+      Chores: 'choresCompleted',
+      Exposure: 'exposureCompleted'
+    }[category] || 'tasksCompleted';
+  }
+
   function queueToasts(messages) {
     messages.filter(Boolean).forEach((message, index) => setTimeout(() => toast(message), index * 1700));
   }
@@ -1096,6 +1340,7 @@ h3 { margin-bottom: 8px; }
     renderNav();
     renderHome();
     renderWardrobe();
+    renderTraining();
     renderLists();
     renderShop();
   }
@@ -1160,7 +1405,8 @@ h3 { margin-bottom: 8px; }
             <h2>Milestones</h2>
             <p class="muted">Locked milestones stay hidden. Completed milestones appear here with what unlocked and what bonus they gave.</p>
           </div>
-          <span class="badge">${state.milestonesUnlocked.length}/${MILESTONES.length} unlocked</span>
+          <span class="badge">Main ${state.milestonesUnlocked.length}/${MILESTONES.length}</span>
+          <span class="badge">Training ${state.training.milestonesUnlocked.length}/${TRAINING_MILESTONES.length}</span>
         </div>
         ${renderUnlockedMilestones()}
       </section>
@@ -1430,6 +1676,465 @@ h3 { margin-bottom: 8px; }
         </div>
       </section>
     `;
+  }
+
+  function renderTraining() {
+    syncTrainingTimers();
+    const training = state.training || createDefaultTrainingState();
+    const fullConvert = Math.floor(Number(state.obedience || 0) / 100);
+    views.training.innerHTML = `
+      <section class="card">
+        <div class="card-title-row">
+          <div>
+            <h2>Sissy Training</h2>
+            <p class="muted">Side tasks earn Obedience. Main Dressed & Dared rolls remain the best way to earn Exhys.</p>
+          </div>
+          <span class="badge">100 Obedience = 1 Exhys</span>
+        </div>
+        <div class="training-summary">
+          <div class="training-stat"><strong>${formatNum(state.obedience)}</strong><span class="muted small">Obedience</span></div>
+          <div class="training-stat"><strong>${formatNum(training.stats.tasksCompleted || 0)}</strong><span class="muted small">Training tasks completed</span></div>
+          <div class="training-stat"><strong>${formatNum(training.stats.totalObedienceEarned || 0)}</strong><span class="muted small">Total Obedience earned</span></div>
+        </div>
+        <div class="conversion-row">
+          <button id="convertObedienceBtn" class="btn primary small" ${fullConvert > 0 ? '' : 'disabled'}>Convert ${formatNum(fullConvert * 100)} Obedience → ${formatNum(fullConvert)} Exhys</button>
+          <span class="small muted">Leftover Obedience stays after conversion.</span>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <div class="card-title-row">
+          <div>
+            <h2>Training Upgrades</h2>
+            <p class="muted">Bought with Obedience. These do not increase normal shop prices.</p>
+          </div>
+          <span class="badge">Cost scaling ×1.3</span>
+        </div>
+        <div class="upgrade-grid">${TRAINING_UPGRADES.map(upgrade => renderTrainingUpgrade(upgrade)).join('')}</div>
+      </section>
+
+      <div class="grid two" style="margin-top:14px">
+        ${TRAINING_CATEGORIES.map(category => renderTrainingCategory(category)).join('')}
+      </div>
+    `;
+
+    document.getElementById('convertObedienceBtn')?.addEventListener('click', convertObedience);
+    document.querySelectorAll('[data-training-upgrade]').forEach(btn => btn.addEventListener('click', () => buyTrainingUpgrade(btn.dataset.trainingUpgrade)));
+    document.querySelectorAll('[data-roll-training]').forEach(btn => btn.addEventListener('click', () => rollTrainingOffer(btn.dataset.rollTraining)));
+    document.querySelectorAll('[data-reroll-training]').forEach(btn => btn.addEventListener('click', () => rerollTrainingOffer(btn.dataset.rerollTraining)));
+    document.querySelectorAll('[data-accept-training]').forEach(btn => btn.addEventListener('click', () => acceptTrainingOffer(btn.dataset.acceptTraining)));
+    document.querySelectorAll('[data-complete-training]').forEach(btn => btn.addEventListener('click', () => completeTrainingTask(btn.dataset.completeTraining)));
+    document.querySelectorAll('[data-cancel-training]').forEach(btn => btn.addEventListener('click', () => cancelTrainingTask(btn.dataset.cancelTraining)));
+    document.querySelectorAll('[data-chastity-locked]').forEach(btn => btn.addEventListener('click', () => startChastityTimer()));
+    document.querySelectorAll('[data-chastity-unlock]').forEach(btn => btn.addEventListener('click', () => askChastityUnlock()));
+    document.querySelectorAll('[data-add-training-task]').forEach(btn => btn.addEventListener('click', () => addTrainingTask(btn.dataset.addTrainingTask)));
+    document.querySelectorAll('[data-training-task-enabled]').forEach(input => input.addEventListener('change', () => updateTrainingTask(input.dataset.trainingTaskEnabled, input.dataset.taskId, { enabled: input.checked })));
+    document.querySelectorAll('[data-training-task-text]').forEach(input => input.addEventListener('input', () => updateTrainingTask(input.dataset.trainingTaskText, input.dataset.taskId, { text: input.value })));
+    document.querySelectorAll('[data-delete-training-task]').forEach(btn => btn.addEventListener('click', () => deleteTrainingTask(btn.dataset.deleteTrainingTask, btn.dataset.taskId)));
+  }
+
+  function renderTrainingUpgrade(upgrade) {
+    const level = Number(state.training.upgrades[upgrade.id] || 0);
+    const cost = trainingUpgradeCost(upgrade.id);
+    return `
+      <div class="upgrade-box">
+        <div class="card-title-row">
+          <div>
+            <h3>${esc(upgrade.name)}</h3>
+            <p class="muted small">${esc(upgrade.description)}</p>
+          </div>
+          <span class="badge">Lv ${level}</span>
+        </div>
+        <footer>
+          <span class="price obedience-price">${formatNum(cost)} Obedience</span>
+          <button class="btn primary small" data-training-upgrade="${esc(upgrade.id)}" ${state.obedience >= cost ? '' : 'disabled'}>Upgrade</button>
+        </footer>
+      </div>
+    `;
+  }
+
+  function renderTrainingCategory(category) {
+    const data = state.training.categories[category];
+    const offer = data.offer;
+    const active = data.active;
+    const normalTaskEditor = USER_TASK_TRAINING_CATEGORIES.includes(category) ? renderTrainingTaskEditor(category) : '';
+    const specialNote = category === 'Chastity'
+      ? '<p class="muted small">Unique timer system. Rolls a duration from 1h to 12h and pays only after “May I unlock now?” says yes.</p>'
+      : category === 'Dress Up'
+        ? '<p class="muted small">Rolls from your Wardrobe colors and unlocked shop outfits instead of a separate task list.</p>'
+        : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
+    return `
+      <section class="card compact training-category">
+        <div class="card-title-row">
+          <div>
+            <h2>${esc(category)}</h2>
+            ${specialNote}
+          </div>
+          <span class="badge">${trainingRerollLimitForNewOffer()} rerolls</span>
+        </div>
+        ${renderTrainingStatus(category, offer, active)}
+        ${normalTaskEditor}
+      </section>
+    `;
+  }
+
+  function renderTrainingStatus(category, offer, active) {
+    if (active) return renderActiveTrainingTask(category, active);
+    if (offer) return renderTrainingOffer(category, offer);
+    return `
+      <div class="offer-box">
+        <p class="muted small">No active offer. Roll a task offer for this category.</p>
+        <button class="btn primary small" data-roll-training="${esc(category)}">Gamble for Offer</button>
+      </div>
+    `;
+  }
+
+  function renderTrainingOffer(category, offer) {
+    const remainingRerolls = Math.max(0, Number(offer.maxRerolls || 0) - Number(offer.rerollsUsed || 0));
+    return `
+      <div class="offer-box">
+        <h3>Current Offer</h3>
+        <p>${esc(offer.taskText)}</p>
+        ${offer.durationMinutes ? `<p class="small muted">Duration: ${formatDuration(offer.durationMinutes * 60)}</p>` : ''}
+        <p class="price obedience-price">Reward: ${formatNum(offer.reward)} Obedience</p>
+        <p class="small muted">Rerolls used: ${offer.rerollsUsed || 0}/${offer.maxRerolls || 0}. ${remainingRerolls === 1 ? 'Next reroll auto-accepts.' : remainingRerolls > 1 ? `${remainingRerolls} rerolls remaining.` : 'No rerolls remaining.'}</p>
+        <div class="roll-controls">
+          <button class="btn small" data-reroll-training="${esc(category)}" ${remainingRerolls > 0 ? '' : 'disabled'}>Reroll Offer</button>
+          <button class="btn primary small" data-accept-training="${esc(category)}">Accept</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderActiveTrainingTask(category, active) {
+    if (category === 'Chastity') return renderActiveChastity(active);
+    return `
+      <div class="active-task-box">
+        <h3>Active Task</h3>
+        <p>${esc(active.taskText)}</p>
+        <p class="price obedience-price">Reward on completion: ${formatNum(active.reward)} Obedience</p>
+        <p class="small muted">Rewards are only paid after completion. Rerolls reset for this category after completion.</p>
+        <div class="roll-controls">
+          <button class="btn primary small" data-complete-training="${esc(category)}">Complete Task</button>
+          <button class="btn ghost small" data-cancel-training="${esc(category)}">Cancel</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderActiveChastity(active) {
+    const status = active.status || 'accepted';
+    const remaining = chastityRemainingSeconds(active);
+    let body = '';
+    if (status === 'accepted') {
+      body = `<p class="muted small">Accepted. Press Locked when the timer has actually started.</p><button class="btn primary small" data-chastity-locked="1">Locked</button>`;
+    } else if (status === 'locked') {
+      body = `<div class="timer-display">${formatDuration(remaining)}</div><p class="muted small">Timer is running. It keeps counting down based on real time.</p>`;
+    } else {
+      body = `<p class="muted small">Timer finished.</p><button class="btn primary small" data-chastity-unlock="1">May I unlock now?</button>`;
+    }
+    return `
+      <div class="active-task-box">
+        <h3>Active Chastity Timer</h3>
+        <p>${esc(active.taskText)}</p>
+        <p class="price obedience-price">Reward after yes: ${formatNum(active.reward)} Obedience</p>
+        <p class="small muted">No count: ${Number(active.noCount || 0)}. Minimum no-extension timer is 5 minutes.</p>
+        ${body}
+        <div class="roll-controls"><button class="btn ghost small" data-cancel-training="Chastity">Cancel</button></div>
+      </div>
+    `;
+  }
+
+  function renderTrainingTaskEditor(category) {
+    const tasks = state.training.categories[category]?.tasks || [];
+    return `
+      <div class="task-editor-box">
+        <h3>Task List</h3>
+        <p class="muted small">Each task is treated as equal. No difficulty or intensity.</p>
+        <button class="btn small" data-add-training-task="${esc(category)}">Add Task</button>
+        <div class="training-task-list">
+          ${tasks.map(task => `
+            <div class="training-task-row">
+              <input type="checkbox" data-training-task-enabled="${esc(category)}" data-task-id="${esc(task.id)}" ${task.enabled ? 'checked' : ''}>
+              <input type="text" data-training-task-text="${esc(category)}" data-task-id="${esc(task.id)}" value="${esc(task.text)}" placeholder="Training task">
+              <button class="btn ghost small" data-delete-training-task="${esc(category)}" data-task-id="${esc(task.id)}">×</button>
+            </div>
+          `).join('') || '<div class="empty">No tasks yet.</div>'}
+        </div>
+      </div>
+    `;
+  }
+
+  function trainingUpgradeCost(id) {
+    const upgrade = TRAINING_UPGRADES.find(item => item.id === id);
+    const level = Number(state.training.upgrades[id] || 0);
+    return Math.ceil((upgrade?.baseCost || 1000) * Math.pow(1.3, level));
+  }
+
+  function trainingRerollLimitForNewOffer() {
+    return 2 + Number(state.training.upgrades.extraRerolls || 0);
+  }
+
+  function obedienceMultiplier() {
+    return 1 + (Number(state.training.upgrades.obedienceMultiplier || 0) * 0.10);
+  }
+
+  function trainingOfferScale() {
+    return 300 + (Number(state.training.upgrades.betterOffers || 0) * 50);
+  }
+
+  function rollTrainingBaseReward() {
+    const scale = trainingOfferScale();
+    return Math.max(1, Math.min(5000, Math.ceil(-Math.log(1 - Math.random()) * scale)));
+  }
+
+  function applyTrainingMultiplier(baseReward) {
+    return Math.max(1, Math.floor(baseReward * obedienceMultiplier()));
+  }
+
+  function rollTrainingOffer(category) {
+    const data = state.training.categories[category];
+    if (data.active) { toast('Complete or cancel the active task first.'); return; }
+    const offer = createTrainingOffer(category);
+    if (!offer) return;
+    data.offer = offer;
+    state.training.stats.offersRolled += 1;
+    if (category === 'Chastity') state.training.stats.chastityOffersRolled += 1;
+    if (category === 'Dress Up') state.training.stats.dressUpGenerated += 1;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`Offer rolled for ${category}.`, ...milestoneMessages]);
+  }
+
+  function rerollTrainingOffer(category) {
+    const data = state.training.categories[category];
+    const oldOffer = data.offer;
+    if (!oldOffer || data.active) return;
+    const maxRerolls = Number(oldOffer.maxRerolls || 0);
+    const nextUsed = Number(oldOffer.rerollsUsed || 0) + 1;
+    if (nextUsed > maxRerolls) return;
+    const newOffer = createTrainingOffer(category);
+    if (!newOffer) return;
+    newOffer.maxRerolls = maxRerolls;
+    newOffer.rerollsUsed = nextUsed;
+    state.training.stats.rerollsUsed += 1;
+    if (nextUsed >= maxRerolls) {
+      data.offer = newOffer;
+      acceptTrainingOffer(category, true);
+      return;
+    }
+    data.offer = newOffer;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`Offer rerolled.`, ...milestoneMessages]);
+  }
+
+  function createTrainingOffer(category) {
+    const base = { id: uid(), category, rerollsUsed: 0, maxRerolls: trainingRerollLimitForNewOffer(), createdAt: new Date().toISOString() };
+    if (category === 'Chastity') return { ...base, ...createChastityOffer() };
+    if (category === 'Dress Up') return { ...base, ...createDressUpTrainingOffer() };
+    const tasks = enabled(state.training.categories[category]?.tasks || []);
+    if (!tasks.length) { toast(`Add at least one enabled ${category} task first.`); return null; }
+    const task = choice(tasks);
+    const baseReward = rollTrainingBaseReward();
+    return { ...base, taskText: task.text, baseReward, reward: applyTrainingMultiplier(baseReward) };
+  }
+
+  function createDressUpTrainingOffer() {
+    const outfit = rollOutfit();
+    let outfitText = '';
+    if (outfit.source === 'shop') outfitText = `${outfit.name}${outfit.details ? ` — ${outfit.details}` : ''}`;
+    else outfitText = outfit.items.join(', ') || 'a wardrobe outfit';
+    const minutes = 10 + Math.floor(Math.random() * 81);
+    const baseReward = rollTrainingBaseReward();
+    return {
+      taskText: `Wear this outfit for ${minutes} minutes: ${outfitText}.`,
+      baseReward,
+      reward: applyTrainingMultiplier(baseReward),
+      outfit
+    };
+  }
+
+  function createChastityOffer() {
+    const durationMinutes = 60 + Math.floor(Math.random() * (720 - 60 + 1));
+    const cap = chastityRewardCap(durationMinutes);
+    const baseReward = Math.max(1, Math.ceil(Math.pow(Math.random(), 1.8) * cap));
+    return {
+      taskText: `Stay locked for ${formatDuration(durationMinutes * 60)}.`,
+      durationMinutes,
+      currentTimerSeconds: durationMinutes * 60,
+      baseReward,
+      reward: applyTrainingMultiplier(baseReward)
+    };
+  }
+
+  function chastityRewardCap(durationMinutes) {
+    const hours = durationMinutes / 60;
+    if (hours < 6) return 400;
+    const progress = (hours - 6) / 6;
+    return 400 + Math.floor(Math.pow(progress, 1.7) * 1600);
+  }
+
+  function acceptTrainingOffer(category, autoAccepted = false) {
+    const data = state.training.categories[category];
+    const offer = data.offer;
+    if (!offer) return;
+    data.offer = null;
+    data.active = { ...offer, acceptedAt: new Date().toISOString(), status: category === 'Chastity' ? 'accepted' : 'active' };
+    state.training.stats.offersAccepted += 1;
+    if (autoAccepted) state.training.stats.autoAcceptedOffers += 1;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([autoAccepted ? `Final reroll auto-accepted for ${category}.` : `${category} task accepted.`, ...milestoneMessages]);
+  }
+
+  function completeTrainingTask(category) {
+    const data = state.training.categories[category];
+    const active = data.active;
+    if (!active || category === 'Chastity') return;
+    payTrainingReward(category, active);
+  }
+
+  function payTrainingReward(category, active) {
+    const luck = trainingLuckBonus();
+    const finalReward = Math.round((Number(active.reward || 0) + luck.bonus) * 10) / 10;
+    state.obedience = Math.round((Number(state.obedience || 0) + finalReward) * 10) / 10;
+    state.training.categories[category].active = null;
+    state.training.categories[category].offer = null;
+    const stats = state.training.stats;
+    stats.tasksCompleted += 1;
+    stats.totalObedienceEarned = Math.round((Number(stats.totalObedienceEarned || 0) + finalReward) * 10) / 10;
+    stats.highestBaseReward = Math.max(Number(stats.highestBaseReward || 0), Number(active.baseReward || 0));
+    stats.highestFinalReward = Math.max(Number(stats.highestFinalReward || 0), finalReward);
+    const key = categoryStatKey(category);
+    stats[key] = Number(stats[key] || 0) + 1;
+    if (category === 'Chastity') {
+      stats.chastityTotalMinutes = Number(stats.chastityTotalMinutes || 0) + Number(active.durationMinutes || 0);
+    }
+    if (luck.bonus > 0) {
+      stats.luckBonusesTriggered += luck.chunks;
+      stats.luckBonusObedience += luck.bonus;
+    }
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`Training complete: +${formatNum(finalReward)} Obedience${luck.bonus ? ` (${formatNum(luck.bonus)} from luck)` : ''}.`, ...milestoneMessages]);
+  }
+
+  function trainingLuckBonus() {
+    const level = Number(state.training.upgrades.trainingLuck || 0);
+    const chance = level * 10;
+    const guaranteed = Math.floor(chance / 100);
+    const leftover = chance % 100;
+    let chunks = guaranteed;
+    if (leftover > 0 && Math.random() * 100 < leftover) chunks += 1;
+    return { chunks, bonus: chunks * 100 };
+  }
+
+  function cancelTrainingTask(category) {
+    if (!confirm(`Cancel the active ${category} task? No Obedience will be paid.`)) return;
+    state.training.categories[category].active = null;
+    state.training.categories[category].offer = null;
+    toast(`${category} task cancelled.`);
+    render();
+  }
+
+  function startChastityTimer() {
+    const active = state.training.categories.Chastity.active;
+    if (!active || active.status !== 'accepted') return;
+    active.status = 'locked';
+    active.endTime = Date.now() + (Number(active.currentTimerSeconds || 0) * 1000);
+    render();
+    toast('Chastity timer started.');
+  }
+
+  function syncTrainingTimers() {
+    const active = state.training?.categories?.Chastity?.active;
+    if (!active || active.status !== 'locked') return;
+    if (chastityRemainingSeconds(active) <= 0) {
+      active.status = 'awaitingUnlock';
+      active.endTime = null;
+    }
+  }
+
+  function chastityRemainingSeconds(active) {
+    if (!active || active.status !== 'locked' || !active.endTime) return Math.max(0, Number(active.currentTimerSeconds || 0));
+    return Math.max(0, Math.ceil((Number(active.endTime) - Date.now()) / 1000));
+  }
+
+  function askChastityUnlock() {
+    const active = state.training.categories.Chastity.active;
+    if (!active || active.status !== 'awaitingUnlock') return;
+    if (Math.random() < 0.95) {
+      payTrainingReward('Chastity', active);
+      queueToasts(['Yes. You may unlock now.']);
+      return;
+    }
+    const nextSeconds = Math.max(300, Math.ceil(Number(active.currentTimerSeconds || 300) / 2));
+    active.currentTimerSeconds = nextSeconds;
+    active.status = 'locked';
+    active.endTime = Date.now() + nextSeconds * 1000;
+    active.noCount = Number(active.noCount || 0) + 1;
+    state.training.stats.chastityNoCount += 1;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`No. Timer restarted for ${formatDuration(nextSeconds)}.`, ...milestoneMessages]);
+  }
+
+  function formatDuration(seconds) {
+    seconds = Math.max(0, Math.ceil(Number(seconds || 0)));
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`;
+    return `${s}s`;
+  }
+
+  function addTrainingTask(category) {
+    const text = prompt(`Add ${category} training task:`);
+    if (!text || !text.trim()) return;
+    state.training.categories[category].tasks.push(makeListItem(text.trim()));
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`${category} task added.`, ...milestoneMessages]);
+  }
+
+  function updateTrainingTask(category, id, patch) {
+    const tasks = state.training.categories[category]?.tasks || [];
+    const task = tasks.find(item => item.id === id);
+    if (!task) return;
+    Object.assign(task, patch);
+    saveState();
+  }
+
+  function deleteTrainingTask(category, id) {
+    state.training.categories[category].tasks = (state.training.categories[category]?.tasks || []).filter(item => item.id !== id);
+    render();
+  }
+
+  function convertObedience() {
+    const exhys = Math.floor(Number(state.obedience || 0) / 100);
+    if (exhys <= 0) return;
+    state.obedience = Math.round((Number(state.obedience || 0) - (exhys * 100)) * 10) / 10;
+    state.exhys = Math.round((Number(state.exhys || 0) + exhys) * 10) / 10;
+    state.training.stats.obedienceConverted += exhys * 100;
+    state.training.stats.exhysFromObedience += exhys;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`Converted ${formatNum(exhys * 100)} Obedience into ${formatNum(exhys)} Exhys.`, ...milestoneMessages]);
+  }
+
+  function buyTrainingUpgrade(id) {
+    const cost = trainingUpgradeCost(id);
+    const upgrade = TRAINING_UPGRADES.find(item => item.id === id);
+    if (!upgrade) return;
+    if (state.obedience < cost) { toast(`Not enough Obedience. Need ${formatNum(cost)}.`); return; }
+    state.obedience = Math.round((Number(state.obedience || 0) - cost) * 10) / 10;
+    state.training.upgrades[id] = Number(state.training.upgrades[id] || 0) + 1;
+    state.training.stats.upgradesBought += 1;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([`${upgrade.name} upgraded.`, ...milestoneMessages]);
   }
 
   function renderLists() {
@@ -1722,17 +2427,22 @@ h3 { margin-bottom: 8px; }
     const keptLocations = JSON.parse(JSON.stringify(state.locations || []));
     const keptDares = JSON.parse(JSON.stringify(state.dares || []));
     const keptDareCount = Number(state.dareCount || 1);
+    const keptTrainingTasks = {};
+    TRAINING_CATEGORIES.forEach(category => {
+      keptTrainingTasks[category] = { tasks: JSON.parse(JSON.stringify(state.training?.categories?.[category]?.tasks || [])), offer: null, active: null };
+    });
     const fresh = createDefaultState();
     state = migrateState({
       ...fresh,
       wardrobe: keptWardrobe,
       locations: keptLocations,
       dares: keptDares,
-      dareCount: keptDareCount
+      dareCount: keptDareCount,
+      training: { ...createDefaultTrainingState(), categories: { ...createDefaultTrainingState().categories, ...keptTrainingTasks } }
     });
     activeView = 'home';
     activeShopTab = 'themes';
-    toast('Progress reset. Settings, locations, and dares kept.');
+    toast('Progress reset. Wardrobe, locations, dares, and training task lists kept.');
     render();
   }
 
@@ -1793,6 +2503,13 @@ h3 { margin-bottom: 8px; }
       showFatalError(err);
     }
   }
+
+  setInterval(() => {
+    if (activeView === 'training') {
+      const active = state.training?.categories?.Chastity?.active;
+      if (active?.status === 'locked') render();
+    }
+  }, 1000);
 
   window.addEventListener('error', event => showFatalError(event.error || event.message));
   window.addEventListener('unhandledrejection', event => showFatalError(event.reason));

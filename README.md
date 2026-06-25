@@ -1,33 +1,31 @@
-# Dressed & Dared PWA — v8
+# Dressed & Dared v10
 
-GitHub Pages-ready single-file build.
+Single-file GitHub Pages build.
 
-## Files
+## Files to upload
 
-Upload these files to the root of your GitHub repo:
+Upload only these files to the root of your GitHub Pages repo:
 
 - `index.html`
 - `.nojekyll`
 - `README.md`
 
-## v8 changes
+## v10 additions
 
-- Upgraded shop outfit cards with rarity borders:
-  - Common: white
-  - Rare: blue
-  - Epic: pink
-  - Legendary: gold/yellow
-- Added stronger Secret Discount badges.
-- Improved roll effects so the visual roll animation changes based on the equipped/purchased effect.
-- Added extra visual feedback:
-  - roll effect burst overlay
-  - result/card animation
-  - Exhys wallet count-up animation
-  - shop purchase flash
-  - completed milestone glow
-- Added Backup & Progress Reset.
-- Progress Reset clears Exhys, purchases, shop inflation, discounts, milestones, and current roll while keeping wardrobe colors, locations, and dares.
+- Added the Sissy Training tab.
+- Added Obedience currency: `100 Obedience = 1 Exhys`.
+- Added training categories: Chastity, Anal, Oral, Bondage, Dress Up, Chores, Exposure.
+- Normal training categories use user-entered equal tasks: text + enabled only.
+- Dress Up Training rolls from Wardrobe colors and unlocked shop outfits.
+- Chastity Training uses a unique timer system instead of a task list.
+- Training offers roll Obedience rewards from 1–5000 with a low-biased/exponential curve.
+- Each training category has one active task at a time.
+- Each offer has free rerolls; the final reroll auto-accepts.
+- Training rewards are only paid after completion.
+- Added Training Upgrades: Extra Rerolls, Obedience Multiplier, Better Offers, Training Luck.
+- Training Upgrades cost Obedience and do not increase normal shop prices.
+- Added 100 hidden Training milestones that reward Obedience.
 
-## Deployment
+## Deployment note
 
-Delete the old GitHub repo files, upload the files from this ZIP, commit, then open the site with `?v=8` once to avoid cached old versions.
+After uploading, open your site with `?v=10` once to avoid seeing an old cached page.
