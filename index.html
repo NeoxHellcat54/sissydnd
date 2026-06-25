@@ -752,6 +752,7 @@ h3 { margin-bottom: 8px; }
       completedRolls: 0,
       completedDares: 0,
       totalExhysEarned: 0,
+      taskExhysEarned: 0,
       highestRollReward: 0,
       highestDareReward: 0,
       shopPurchases: 0,
@@ -789,6 +790,7 @@ h3 { margin-bottom: 8px; }
       rerollsUsed: 0,
       tasksCompleted: 0,
       totalObedienceEarned: 0,
+      taskObedienceEarned: 0,
       highestBaseReward: 0,
       highestFinalReward: 0,
       obedienceConverted: 0,
@@ -866,6 +868,7 @@ h3 { margin-bottom: 8px; }
     merged.discounts = merged.discounts && typeof merged.discounts === 'object' ? merged.discounts : {};
     merged.priceFreezes = Number(merged.priceFreezes || 0);
     merged.stats = { ...createDefaultStats(), ...(merged.stats || {}) };
+    if (!Object.prototype.hasOwnProperty.call(merged.stats, 'taskExhysEarned')) merged.stats.taskExhysEarned = 0;
     merged.training = migrateTrainingState(merged.training);
     // Older builds had local history/saved rolls. Keep imported data valid, but do not render or use it.
     return merged;
@@ -890,6 +893,7 @@ h3 { margin-bottom: 8px; }
     merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
     merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
     merged.stats = { ...createDefaultTrainingStats(), ...(merged.stats || {}) };
+    if (!Object.prototype.hasOwnProperty.call(merged.stats, 'taskObedienceEarned')) merged.stats.taskObedienceEarned = 0;
     return merged;
   }
 
@@ -1005,25 +1009,25 @@ h3 { margin-bottom: 8px; }
     [1,2,3,5,8].forEach(n => add('small', 'locationsCount', n));
     [1,3,5,8,10].forEach(n => add('small', 'daresCount', n));
     [1,2,3,4,5].forEach(n => add('small', 'shopPurchases', n));
-    [100,250,500,750,1000].forEach(n => add('small', 'totalExhysEarned', n));
+    [100,250,500,750,1000].forEach(n => add('small', 'taskExhysEarned', n));
     [1,2,3,4,5].forEach(n => add('small', 'wardrobeCoverage', n));
 
     [15,20,30,40,50,65,80,100].forEach(n => add('medium', 'completedRolls', n));
     [25,40,60,80,100,130,160,200].forEach(n => add('medium', 'completedDares', n));
-    [1500,2000,3000,4000,5000].forEach(n => add('medium', 'totalExhysEarned', n));
+    [1500,2000,3000,4000,5000].forEach(n => add('medium', 'taskExhysEarned', n));
     [6,8,10,12].forEach(n => add('medium', 'shopPurchases', n));
     [1,2,3].forEach(n => add('medium', 'outfitsUnlocked', n));
     [70,85].forEach(n => add('medium', 'highestDareReward', n));
 
     [125,150,200,250].forEach(n => add('big', 'completedRolls', n));
     [250,350,500,750].forEach(n => add('big', 'completedDares', n));
-    [7500,10000,15000].forEach(n => add('big', 'totalExhysEarned', n));
+    [7500,10000,15000].forEach(n => add('big', 'taskExhysEarned', n));
     [250,400].forEach(n => add('big', 'highestRollReward', n));
     [6,10].forEach(n => add('big', 'outfitsUnlocked', n));
 
     [300,500].forEach(n => add('major', 'completedRolls', n));
     [1000,1500].forEach(n => add('major', 'completedDares', n));
-    [25000,50000].forEach(n => add('major', 'totalExhysEarned', n));
+    [25000,50000].forEach(n => add('major', 'taskExhysEarned', n));
     [120,140].forEach(n => add('major', 'highestDareReward', n));
     add('major', 'allOutfitsUnlocked', 1);
     add('major', 'shopPurchases', 20);
@@ -1059,7 +1063,7 @@ h3 { margin-bottom: 8px; }
       locationsCount: n === 1 ? 'Add your first location' : `Add ${n} locations`,
       daresCount: n === 1 ? 'Add your first dare' : `Add ${n} dares to the list`,
       shopPurchases: n === 1 ? 'Make your first shop purchase' : `Make ${n} shop purchases`,
-      totalExhysEarned: `Earn ${formatNum(n)} total Exhys`,
+      taskExhysEarned: `Earn ${formatNum(n)} Exhys from completed Dressed & Dared rolls`,
       wardrobeCoverage: n === 1 ? 'Enable your first wardrobe category' : `Enable colors in ${n} wardrobe categories`,
       outfitsUnlocked: n === 1 ? 'Unlock your first outfit' : `Unlock ${n} outfits`,
       highestDareReward: `Reveal a ${formatNum(n)}+ Exhys single-dare reward`,
@@ -1145,7 +1149,6 @@ h3 { margin-bottom: 8px; }
       const reward = MILESTONE_REWARDS[milestone.size] || 0;
       if (reward > 0) {
         state.exhys = Math.round((state.exhys + reward) * 10) / 10;
-        state.stats.totalExhysEarned = Math.round((Number(state.stats.totalExhysEarned || 0) + reward) * 10) / 10;
       }
 
       let legendaryText = '';
@@ -1202,7 +1205,7 @@ h3 { margin-bottom: 8px; }
     [1,2,3,4,5,6,7,8,9,10].forEach(n => add('small', 'tasksCompleted', n));
     [1,2,3,4,5].forEach(n => add('small', 'offersAccepted', n));
     [1,2,3,4,5].forEach(n => add('small', 'rerollsUsed', n));
-    [50,100,200,300,500,750,1000,1500].forEach(n => add('small', 'totalObedienceEarned', n));
+    [50,100,200,300,500,750,1000,1500].forEach(n => add('small', 'taskObedienceEarned', n));
     [1,2,3,4].forEach(n => add('small', 'trainingTaskListsWithItems', n));
     [1,2,3,4].forEach(n => add('small', 'trainingCategoriesCompleted', n));
     [1,2,3].forEach(n => add('small', 'upgradesBought', n));
@@ -1211,7 +1214,7 @@ h3 { margin-bottom: 8px; }
 
     [15,20,25,30,40,50,65,80].forEach(n => add('medium', 'tasksCompleted', n));
     [10,15,20,30,40].forEach(n => add('medium', 'offersAccepted', n));
-    [2500,4000,6000,8000,10000,15000].forEach(n => add('medium', 'totalObedienceEarned', n));
+    [2500,4000,6000,8000,10000,15000].forEach(n => add('medium', 'taskObedienceEarned', n));
     [500,1000].forEach(n => add('medium', 'highestFinalReward', n));
     [5,8,10].forEach(n => add('medium', 'upgradesBought', n));
     [1,2].forEach(n => add('medium', 'chastityCompleted', n));
@@ -1219,14 +1222,14 @@ h3 { margin-bottom: 8px; }
     [1,2].forEach(n => add('medium', 'autoAcceptedOffers', n));
 
     [100,150,200,300].forEach(n => add('big', 'tasksCompleted', n));
-    [25000,40000,60000].forEach(n => add('big', 'totalObedienceEarned', n));
+    [25000,40000,60000].forEach(n => add('big', 'taskObedienceEarned', n));
     [1500,2500].forEach(n => add('big', 'highestFinalReward', n));
     [15,25].forEach(n => add('big', 'upgradesBought', n));
     [5,10].forEach(n => add('big', 'chastityCompleted', n));
     [5,10].forEach(n => add('big', 'luckBonusesTriggered', n));
 
     [500,1000].forEach(n => add('major', 'tasksCompleted', n));
-    [100000,250000].forEach(n => add('major', 'totalObedienceEarned', n));
+    [100000,250000].forEach(n => add('major', 'taskObedienceEarned', n));
     [3500,5000].forEach(n => add('major', 'highestFinalReward', n));
     [50].forEach(n => add('major', 'upgradesBought', n));
     [25].forEach(n => add('major', 'chastityCompleted', n));
@@ -1255,7 +1258,7 @@ h3 { margin-bottom: 8px; }
       tasksCompleted: n === 1 ? 'Complete your first training task' : `Complete ${n} training tasks`,
       offersAccepted: n === 1 ? 'Accept your first training offer' : `Accept ${n} training offers`,
       rerollsUsed: n === 1 ? 'Use your first training reroll' : `Use ${n} training rerolls`,
-      totalObedienceEarned: `Earn ${formatNum(n)} total Obedience`,
+      taskObedienceEarned: `Earn ${formatNum(n)} Obedience from completed training tasks`,
       trainingTaskListsWithItems: `Add enabled tasks to ${n} training categories`,
       trainingCategoriesCompleted: `Complete tasks in ${n} different training categories`,
       upgradesBought: n === 1 ? 'Buy your first training upgrade' : `Buy ${n} training upgrades`,
@@ -1282,7 +1285,6 @@ h3 { margin-bottom: 8px; }
       training.milestonesUnlocked.push(milestone.id);
       const reward = TRAINING_MILESTONE_REWARDS[milestone.size] || 0;
       state.obedience = Math.round((Number(state.obedience || 0) + reward) * 10) / 10;
-      training.stats.totalObedienceEarned = Math.round((Number(training.stats.totalObedienceEarned || 0) + reward) * 10) / 10;
       const reveal = trainingMilestoneReveal(milestone);
       training.milestoneLog.unshift({
         id: milestone.id,
@@ -1587,6 +1589,7 @@ h3 { margin-bottom: 8px; }
     state.stats.completedRolls += 1;
     state.stats.completedDares += roll.dares.length;
     state.stats.totalExhysEarned = Math.round((Number(state.stats.totalExhysEarned || 0) + roll.totalReward) * 10) / 10;
+    state.stats.taskExhysEarned = Math.round((Number(state.stats.taskExhysEarned || 0) + roll.totalReward) * 10) / 10;
     state.stats.highestRollReward = Math.max(Number(state.stats.highestRollReward || 0), roll.totalReward);
     state.stats.highestDareReward = Math.max(Number(state.stats.highestDareReward || 0), ...roll.dares.map(d => Number(d.reward || 0)));
     if (roll.outfit.source === 'shop') state.stats.shopOutfitCompletions += 1;
@@ -1694,7 +1697,7 @@ h3 { margin-bottom: 8px; }
         <div class="training-summary">
           <div class="training-stat"><strong>${formatNum(state.obedience)}</strong><span class="muted small">Obedience</span></div>
           <div class="training-stat"><strong>${formatNum(training.stats.tasksCompleted || 0)}</strong><span class="muted small">Training tasks completed</span></div>
-          <div class="training-stat"><strong>${formatNum(training.stats.totalObedienceEarned || 0)}</strong><span class="muted small">Total Obedience earned</span></div>
+          <div class="training-stat"><strong>${formatNum(training.stats.taskObedienceEarned || 0)}</strong><span class="muted small">Task-earned Obedience</span></div>
         </div>
         <div class="conversion-row">
           <button id="convertObedienceBtn" class="btn primary small" ${fullConvert > 0 ? '' : 'disabled'}>Convert ${formatNum(fullConvert * 100)} Obedience → ${formatNum(fullConvert)} Exhys</button>
@@ -2004,6 +2007,7 @@ h3 { margin-bottom: 8px; }
     const stats = state.training.stats;
     stats.tasksCompleted += 1;
     stats.totalObedienceEarned = Math.round((Number(stats.totalObedienceEarned || 0) + finalReward) * 10) / 10;
+    stats.taskObedienceEarned = Math.round((Number(stats.taskObedienceEarned || 0) + finalReward) * 10) / 10;
     stats.highestBaseReward = Math.max(Number(stats.highestBaseReward || 0), Number(active.baseReward || 0));
     stats.highestFinalReward = Math.max(Number(stats.highestFinalReward || 0), finalReward);
     const key = categoryStatKey(category);

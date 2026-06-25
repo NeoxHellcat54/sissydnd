@@ -1,4 +1,4 @@
-# Dressed & Dared v10
+# Dressed & Dared v11
 
 Single-file GitHub Pages build.
 
@@ -10,7 +10,7 @@ Upload only these files to the root of your GitHub Pages repo:
 - `.nojekyll`
 - `README.md`
 
-## v10 additions
+## v11 additions
 
 - Added the Sissy Training tab.
 - Added Obedience currency: `100 Obedience = 1 Exhys`.
@@ -29,3 +29,8 @@ Upload only these files to the root of your GitHub Pages repo:
 ## Deployment note
 
 After uploading, open your site with `?v=10` once to avoid seeing an old cached page.
+
+
+## v11 fix
+
+Currency-earning milestones now use task-earned counters only. Milestone reward bonuses no longer count toward "earn X Exhys" or "earn X Obedience" milestone thresholds.
