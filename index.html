@@ -533,8 +533,58 @@ h3 { margin-bottom: 8px; }
 .offer-box { border-color: rgba(54,245,255,0.30); box-shadow: 0 0 18px rgba(54,245,255,0.08); }
 .active-task-box { border-color: rgba(255,216,90,0.36); box-shadow: 0 0 18px rgba(255,216,90,0.09); }
 .training-task-list { display:grid; gap:8px; margin-top:10px; }
-.training-task-row { display:flex; align-items:center; gap:8px; padding:8px; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(255,255,255,0.035); }
-.training-task-row input[type='text'] { flex:1; min-width: 0; }
+.training-add-row {
+  display:flex;
+  gap:8px;
+  align-items:stretch;
+  margin-top:10px;
+  padding:10px;
+  border:1px solid rgba(var(--accent-rgb),0.24);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb),0.12), transparent 46%),
+    rgba(0,0,0,0.20);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025);
+}
+.training-add-row input,
+.training-task-row input[type='text'] {
+  flex:1;
+  min-width:0;
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:15px;
+  padding:10px 12px;
+  color:var(--text);
+  background:rgba(0,0,0,0.28);
+  outline:none;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.20);
+}
+.training-add-row input::placeholder,
+.training-task-row input[type='text']::placeholder { color: rgba(255,255,255,0.46); }
+.training-add-row input:focus,
+.training-task-row input[type='text']:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.16), inset 0 0 12px rgba(0,0,0,0.22);
+}
+.training-task-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px;
+  border:1px solid rgba(255,255,255,0.10);
+  border-radius:16px;
+  background:linear-gradient(135deg, rgba(var(--accent-rgb),0.055), rgba(var(--accent-2-rgb),0.035)), rgba(0,0,0,0.18);
+}
+.training-task-row input[type='checkbox'] { accent-color: var(--accent); width:18px; height:18px; }
+.training-task-display {
+  margin:10px 0;
+  padding:12px 13px;
+  border:1px solid rgba(var(--accent-rgb),0.24);
+  border-radius:16px;
+  background:linear-gradient(135deg, rgba(var(--accent-rgb),0.10), rgba(var(--accent-2-rgb),0.055)), rgba(0,0,0,0.22);
+  color:var(--text);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.12);
+}
+@media (max-width: 520px) { .training-add-row, .training-task-row { flex-direction:column; align-items:stretch; } }
 .timer-display { font-size: 1.8rem; font-weight: 900; letter-spacing: 0.04em; color: var(--warn); text-shadow: 0 0 18px rgba(255,211,110,0.25); margin: 8px 0; }
 .category-pill-row { display:flex; gap:8px; flex-wrap:wrap; }
 .conversion-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
@@ -3322,6 +3372,12 @@ h3 { margin-bottom: 8px; }
     document.querySelectorAll('[data-chastity-locked]').forEach(btn => btn.addEventListener('click', () => startChastityTimer()));
     document.querySelectorAll('[data-chastity-unlock]').forEach(btn => btn.addEventListener('click', () => askChastityUnlock()));
     document.querySelectorAll('[data-add-training-task]').forEach(btn => btn.addEventListener('click', () => addTrainingTask(btn.dataset.addTrainingTask)));
+    document.querySelectorAll('[data-new-training-task]').forEach(input => input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addTrainingTask(input.dataset.newTrainingTask);
+      }
+    }));
     document.querySelectorAll('[data-training-task-enabled]').forEach(input => input.addEventListener('change', () => updateTrainingTask(input.dataset.trainingTaskEnabled, input.dataset.taskId, { enabled: input.checked })));
     document.querySelectorAll('[data-training-task-text]').forEach(input => input.addEventListener('input', () => updateTrainingTask(input.dataset.trainingTaskText, input.dataset.taskId, { text: input.value })));
     document.querySelectorAll('[data-delete-training-task]').forEach(btn => btn.addEventListener('click', () => deleteTrainingTask(btn.dataset.deleteTrainingTask, btn.dataset.taskId)));
@@ -3390,7 +3446,7 @@ h3 { margin-bottom: 8px; }
     return `
       <div class="offer-box">
         <h3>Current Offer</h3>
-        <p>${esc(offer.taskText)}</p>
+        <p class="training-task-display">${esc(offer.taskText)}</p>
         ${offer.durationMinutes ? `<p class="small muted">Duration: ${formatDuration(offer.durationMinutes * 60)}</p>` : ''}
         <p class="price obedience-price">Reward: ${formatNum(offer.reward)} Obedience</p>
         <p class="small muted">Rerolls used: ${offer.rerollsUsed || 0}/${offer.maxRerolls || 0}. ${remainingRerolls === 1 ? 'Next reroll auto-accepts.' : remainingRerolls > 1 ? `${remainingRerolls} rerolls remaining.` : 'No rerolls remaining.'}</p>
@@ -3407,7 +3463,7 @@ h3 { margin-bottom: 8px; }
     return `
       <div class="active-task-box">
         <h3>Active Task</h3>
-        <p>${esc(active.taskText)}</p>
+        <p class="training-task-display">${esc(active.taskText)}</p>
         <p class="price obedience-price">Reward on completion: ${formatNum(active.reward)} Obedience</p>
         <p class="small muted">Rewards are only paid after completion. Rerolls reset for this category after completion.</p>
         <div class="roll-controls">
@@ -3432,7 +3488,7 @@ h3 { margin-bottom: 8px; }
     return `
       <div class="active-task-box">
         <h3>Active Chastity Timer</h3>
-        <p>${esc(active.taskText)}</p>
+        <p class="training-task-display">${esc(active.taskText)}</p>
         <p class="price obedience-price">Reward after yes: ${formatNum(active.reward)} Obedience</p>
         <p class="small muted">No count: ${Number(active.noCount || 0)}. Minimum no-extension timer is 5 minutes.</p>
         ${body}
@@ -3447,7 +3503,10 @@ h3 { margin-bottom: 8px; }
       <div class="task-editor-box">
         <h3>Task List</h3>
         <p class="muted small">Each task is treated as equal. No difficulty or intensity.</p>
-        <button class="btn small" data-add-training-task="${esc(category)}">Add Task</button>
+        <div class="training-add-row">
+          <input type="text" data-new-training-task="${esc(category)}" placeholder="Add a ${esc(category)} training task..." maxlength="220">
+          <button class="btn primary small" data-add-training-task="${esc(category)}">Add Task</button>
+        </div>
         <div class="training-task-list">
           ${tasks.map(task => `
             <div class="training-task-row">
@@ -3697,9 +3756,15 @@ h3 { margin-bottom: 8px; }
   }
 
   function addTrainingTask(category) {
-    const text = prompt(`Add ${category} training task:`);
-    if (!text || !text.trim()) return;
-    state.training.categories[category].tasks.push(makeListItem(text.trim()));
+    const input = Array.from(document.querySelectorAll('[data-new-training-task]')).find(item => item.dataset.newTrainingTask === category);
+    const text = input ? input.value.trim() : '';
+    if (!text) {
+      toast('Type a training task first.');
+      if (input) input.focus();
+      return;
+    }
+    state.training.categories[category].tasks.push(makeListItem(text));
+    if (input) input.value = '';
     const milestoneMessages = checkTrainingMilestones();
     render();
     queueToasts([`${category} task added.`, ...milestoneMessages]);
