@@ -542,6 +542,29 @@ h3 { margin-bottom: 8px; }
 .upgrade-box footer { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:10px; }
 .milestone-entry.training-milestone { border-color: rgba(54,245,255,0.28); }
 .price.obedience-price, .obedience-text { color: var(--accent-3); text-shadow: 0 0 14px rgba(54,245,255,0.18); }
+
+/* v12 outfit library + rank battle pass */
+.collection-summary { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; margin-top:12px; }
+.collection-stat { border:1px solid var(--border); border-radius:16px; padding:12px; background:rgba(0,0,0,0.18); }
+.collection-stat strong { display:block; font-size:1.2rem; }
+.outfit-card.locked { opacity:0.72; filter:saturate(0.65); }
+.outfit-card .pieces { margin-top:10px; display:grid; gap:4px; }
+.outfit-card .pieces span { display:block; font-size:.84rem; color:var(--muted); }
+.rank-hero { position:relative; overflow:hidden; }
+.rank-hero::before { content:''; position:absolute; inset:-80px -80px auto auto; width:220px; height:220px; background:radial-gradient(circle, rgba(var(--accent-rgb),0.22), transparent 62%); pointer-events:none; }
+.rank-hero > * { position:relative; }
+.rank-progress { height:18px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:999px; overflow:hidden; box-shadow: inset 0 0 16px rgba(0,0,0,0.25); }
+.rank-progress > span { display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow:0 0 18px rgba(var(--accent-rgb),0.42); transition:width 350ms ease; }
+.rank-track { display:grid; gap:10px; margin-top:14px; }
+.rank-node { display:grid; grid-template-columns: 86px 1fr auto; gap:12px; align-items:center; border:1px solid var(--border); border-radius:18px; padding:12px; background:rgba(255,255,255,0.045); }
+.rank-node.claimed { border-color:rgba(75,255,165,0.28); background:rgba(75,255,165,0.055); }
+.rank-node.current { border-color:rgba(var(--accent-rgb),0.55); box-shadow:0 0 22px rgba(var(--accent-rgb),0.16); }
+.rank-number { font-weight:900; font-size:1.05rem; }
+.rank-reward-list { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+.rank-reward-list .badge { font-size:.74rem; }
+.discount-line { font-size:.82rem; color:var(--muted); }
+@media (max-width: 720px) { .collection-summary { grid-template-columns: 1fr 1fr; } .rank-node { grid-template-columns: 1fr; } }
+
 @media (max-width: 720px) { .training-summary, .upgrade-grid { grid-template-columns: 1fr; } .top-wallets { width:100%; justify-content:space-between; } .top-wallets .wallet { flex:1; min-width: 0; } }
 
   </style>
@@ -580,6 +603,7 @@ h3 { margin-bottom: 8px; }
       </section>
       <section id="view-wardrobe" class="view"></section>
       <section id="view-training" class="view"></section>
+      <section id="view-rank" class="view"></section>
       <section id="view-lists" class="view"></section>
       <section id="view-shop" class="view"></section>
     </main>
@@ -642,19 +666,955 @@ h3 { margin-bottom: 8px; }
     { name: 'Casual', slots: ['Panties', 'Bra', 'Top', 'Skirt', 'Socks', 'Shoes', 'Makeup'] }
   ];
 
+
   const RARITY = {
-    common: { label: 'Common', basePrice: 150, weight: 40 },
-    rare: { label: 'Rare', basePrice: 250, weight: 25 },
-    epic: { label: 'Epic', basePrice: 400, weight: 12 },
-    legendary: { label: 'Legendary', basePrice: 700, weight: 5 }
+    common: { label: 'Common', basePrice: 60, weight: 40 },
+    rare: { label: 'Rare', basePrice: 150, weight: 20 },
+    epic: { label: 'Epic', basePrice: 350, weight: 8 },
+    legendary: { label: 'Legendary', basePrice: 800, weight: 2 }
   };
+
+  const OUTFIT_LIBRARY = [
+    {
+        "id": "outfit-001",
+        "number": 1,
+        "kind": "outfit",
+        "name": "Bubblegum Errand",
+        "rarity": "common",
+        "details": "Pink top, jeans, pink trainers, blonde wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-002",
+        "number": 2,
+        "kind": "outfit",
+        "name": "Blue Weekend",
+        "rarity": "common",
+        "details": "Blue top, jeans, blue trainers, brunette wig",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-003",
+        "number": 3,
+        "kind": "outfit",
+        "name": "Snowdrop Casual",
+        "rarity": "common",
+        "details": "White top, jeans, white heels, platinum blonde wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-004",
+        "number": 4,
+        "kind": "outfit",
+        "name": "Midnight Coffee Run",
+        "rarity": "common",
+        "details": "Black top, jeans, black heels, black wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-005",
+        "number": 5,
+        "kind": "outfit",
+        "name": "Lemon Daydream",
+        "rarity": "common",
+        "details": "Yellow top, jeans, pink trainers, blonde wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-006",
+        "number": 6,
+        "kind": "outfit",
+        "name": "Candy Skater",
+        "rarity": "common",
+        "details": "Pink top, white skirt, pink heels, pink wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-007",
+        "number": 7,
+        "kind": "outfit",
+        "name": "Cloud Nine",
+        "rarity": "common",
+        "details": "White top, blue skirt, blue heels, blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-008",
+        "number": 8,
+        "kind": "outfit",
+        "name": "After-Dark Beginner",
+        "rarity": "common",
+        "details": "Black top, black skirt, black heels, black wig, black makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-009",
+        "number": 9,
+        "kind": "outfit",
+        "name": "Blush Sunday",
+        "rarity": "common",
+        "details": "Pink top, white skirt, white heels, platinum blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-010",
+        "number": 10,
+        "kind": "outfit",
+        "name": "Honey Skirt",
+        "rarity": "common",
+        "details": "Yellow top, white skirt, yellow heels, blonde wig, pink makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-011",
+        "number": 11,
+        "kind": "outfit",
+        "name": "Blue Dash",
+        "rarity": "common",
+        "details": "Blue top, jeans, blue trainers, silver wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-012",
+        "number": 12,
+        "kind": "outfit",
+        "name": "Bubblegum Dash",
+        "rarity": "common",
+        "details": "Pink top, jeans, pink trainers, pink and white wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-013",
+        "number": 13,
+        "kind": "outfit",
+        "name": "Pink Daydream",
+        "rarity": "common",
+        "details": "Pink dress, pink heels, pink wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-014",
+        "number": 14,
+        "kind": "outfit",
+        "name": "Bluebell",
+        "rarity": "common",
+        "details": "Blue dress, blue heels, blonde wig",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-015",
+        "number": 15,
+        "kind": "outfit",
+        "name": "Snow Angel Day",
+        "rarity": "common",
+        "details": "White dress, white heels, platinum blonde wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-016",
+        "number": 16,
+        "kind": "outfit",
+        "name": "Midnight Dress",
+        "rarity": "common",
+        "details": "Black dress, black heels, black wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-017",
+        "number": 17,
+        "kind": "outfit",
+        "name": "Lemon Drop",
+        "rarity": "common",
+        "details": "Yellow dress, yellow heels, blonde wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-018",
+        "number": 18,
+        "kind": "outfit",
+        "name": "Violet Crush",
+        "rarity": "common",
+        "details": "Purple dress, purple heels, purple wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-019",
+        "number": 19,
+        "kind": "outfit",
+        "name": "Meadow Girl",
+        "rarity": "common",
+        "details": "Green dress, white heels, brunette wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-020",
+        "number": 20,
+        "kind": "outfit",
+        "name": "Cocoa Softie",
+        "rarity": "common",
+        "details": "Brown dress, black heels, curly brunette wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-021",
+        "number": 21,
+        "kind": "outfit",
+        "name": "Sugar Pop",
+        "rarity": "common",
+        "details": "Pink top, white skirt, pink heels, pink and white wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-022",
+        "number": 22,
+        "kind": "outfit",
+        "name": "Blue Sugar",
+        "rarity": "common",
+        "details": "Blue top, white skirt, blue heels, silver wig, blue makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-023",
+        "number": 23,
+        "kind": "outfit",
+        "name": "Midnight Blush",
+        "rarity": "common",
+        "details": "Black top, pink skirt, black heels, black wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-024",
+        "number": 24,
+        "kind": "outfit",
+        "name": "Lemon Splash",
+        "rarity": "common",
+        "details": "Yellow top, blue skirt, blue heels, blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-025",
+        "number": 25,
+        "kind": "outfit",
+        "name": "Porcelain Blue",
+        "rarity": "common",
+        "details": "White top, blue skirt, white heels, silver wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-026",
+        "number": 26,
+        "kind": "outfit",
+        "name": "Violet Lounge",
+        "rarity": "common",
+        "details": "Pink top, purple leggings, pink trainers, purple wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-027",
+        "number": 27,
+        "kind": "outfit",
+        "name": "Citrus Sport",
+        "rarity": "common",
+        "details": "Orange sports bra, jeans, blue trainers, brunette wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-028",
+        "number": 28,
+        "kind": "outfit",
+        "name": "Purple Pulse",
+        "rarity": "common",
+        "details": "Purple sports bra, jeans, pink trainers, purple wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-029",
+        "number": 29,
+        "kind": "outfit",
+        "name": "Hidden Sweetheart",
+        "rarity": "common",
+        "details": "White top, jeans, long overcoat, black heels, blonde wig",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-030",
+        "number": 30,
+        "kind": "outfit",
+        "name": "Blonde Blush",
+        "rarity": "common",
+        "details": "Pink dress, white heels, blonde wig, pink makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-031",
+        "number": 31,
+        "kind": "outfit",
+        "name": "Soft Storm",
+        "rarity": "common",
+        "details": "Blue top, jeans, black heels, curly brunette wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-032",
+        "number": 32,
+        "kind": "outfit",
+        "name": "Silver Sunday",
+        "rarity": "common",
+        "details": "White dress, white heels, silver wig, blue makeup",
+        "unlock": "rank",
+        "rankLevel": 2
+    },
+    {
+        "id": "outfit-033",
+        "number": 33,
+        "kind": "outfit",
+        "name": "Pink Candy Run",
+        "rarity": "common",
+        "details": "Pink top, jeans, pink trainers, pink wig",
+        "unlock": "rank",
+        "rankLevel": 4
+    },
+    {
+        "id": "outfit-034",
+        "number": 34,
+        "kind": "outfit",
+        "name": "Black Coffee",
+        "rarity": "common",
+        "details": "Black top, jeans, black heels, black wig",
+        "unlock": "rank",
+        "rankLevel": 6
+    },
+    {
+        "id": "outfit-035",
+        "number": 35,
+        "kind": "outfit",
+        "name": "Scarlet Streak",
+        "rarity": "common",
+        "details": "White top, black skirt, red and black wig, red heels",
+        "unlock": "rank",
+        "rankLevel": 8
+    },
+    {
+        "id": "outfit-036",
+        "number": 36,
+        "kind": "outfit",
+        "name": "Platinum Breeze",
+        "rarity": "common",
+        "details": "Blue dress, white heels, platinum blonde wig",
+        "unlock": "rank",
+        "rankLevel": 10
+    },
+    {
+        "id": "outfit-037",
+        "number": 37,
+        "kind": "outfit",
+        "name": "Garden Blush",
+        "rarity": "common",
+        "details": "Green dress, white heels, brunette wig, pink makeup",
+        "unlock": "rank",
+        "rankLevel": 12
+    },
+    {
+        "id": "outfit-038",
+        "number": 38,
+        "kind": "outfit",
+        "name": "Hot Pink Spark",
+        "rarity": "common",
+        "details": "Hot pink dress, pink heels, pink wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-039",
+        "number": 39,
+        "kind": "outfit",
+        "name": "Cherry Daylight",
+        "rarity": "common",
+        "details": "Red dress, red heels, red and black wig, red makeup",
+        "unlock": "rank",
+        "rankLevel": 14
+    },
+    {
+        "id": "outfit-040",
+        "number": 40,
+        "kind": "outfit",
+        "name": "Golden Hour",
+        "rarity": "common",
+        "details": "Gold dress, white heels, blonde wig",
+        "unlock": "rank",
+        "rankLevel": 16
+    },
+    {
+        "id": "outfit-041",
+        "number": 41,
+        "kind": "outfit",
+        "name": "Silver Glow",
+        "rarity": "common",
+        "details": "Silver dress, white heels, silver wig",
+        "unlock": "rank",
+        "rankLevel": 18
+    },
+    {
+        "id": "outfit-042",
+        "number": 42,
+        "kind": "outfit",
+        "name": "Blush Under Cover",
+        "rarity": "common",
+        "details": "Pink dress, long overcoat, pink heels, pink wig",
+        "unlock": "rank",
+        "rankLevel": 20
+    },
+    {
+        "id": "outfit-043",
+        "number": 43,
+        "kind": "outfit",
+        "name": "Blue Under Cover",
+        "rarity": "common",
+        "details": "Blue dress, long overcoat, blue heels, blonde wig",
+        "unlock": "rank",
+        "rankLevel": 24
+    },
+    {
+        "id": "outfit-044",
+        "number": 44,
+        "kind": "outfit",
+        "name": "Midnight Under Cover",
+        "rarity": "common",
+        "details": "Black dress, long overcoat, black heels, black wig",
+        "unlock": "rank",
+        "rankLevel": 26
+    },
+    {
+        "id": "outfit-045",
+        "number": 45,
+        "kind": "outfit",
+        "name": "Snow Under Cover",
+        "rarity": "common",
+        "details": "White dress, long overcoat, white heels, platinum blonde wig",
+        "unlock": "rank",
+        "rankLevel": 28
+    },
+    {
+        "id": "outfit-046",
+        "number": 46,
+        "kind": "outfit",
+        "name": "Blush Invitation",
+        "rarity": "rare",
+        "details": "Pink dress, white stockings, pink heels, pink wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-047",
+        "number": 47,
+        "kind": "outfit",
+        "name": "Midnight Invitation",
+        "rarity": "rare",
+        "details": "Black dress, black stockings, black heels, black wig, red makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-048",
+        "number": 48,
+        "kind": "outfit",
+        "name": "Scarlet Invitation",
+        "rarity": "rare",
+        "details": "Red dress, black stockings, red heels, red and black wig, red makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-049",
+        "number": 49,
+        "kind": "outfit",
+        "name": "Blue Velvet",
+        "rarity": "rare",
+        "details": "Blue dress, white stockings, blue heels, blonde wig, blue makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-050",
+        "number": 50,
+        "kind": "outfit",
+        "name": "Violet Velvet",
+        "rarity": "rare",
+        "details": "Purple dress, black stockings, purple heels, purple wig",
+        "unlock": "rank",
+        "rankLevel": 22
+    },
+    {
+        "id": "outfit-051",
+        "number": 51,
+        "kind": "outfit",
+        "name": "Hot Pink Afterparty",
+        "rarity": "rare",
+        "details": "Hot pink dress, pink stockings, hot pink heels, pink wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-052",
+        "number": 52,
+        "kind": "outfit",
+        "name": "Silver Spotlight",
+        "rarity": "rare",
+        "details": "Silver dress, white stockings, blue heels, silver wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-053",
+        "number": 53,
+        "kind": "outfit",
+        "name": "Golden Spotlight",
+        "rarity": "rare",
+        "details": "Gold dress, white stockings, yellow heels, blonde wig, gold-style makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-054",
+        "number": 54,
+        "kind": "outfit",
+        "name": "Black Cherry",
+        "rarity": "rare",
+        "details": "Black dress, red stockings, red heels, red and black wig, red makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-055",
+        "number": 55,
+        "kind": "outfit",
+        "name": "Sugar Date",
+        "rarity": "rare",
+        "details": "White dress, pink stockings, pink heels, platinum blonde wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-056",
+        "number": 56,
+        "kind": "outfit",
+        "name": "Ice Blue Doll",
+        "rarity": "rare",
+        "details": "Blue dress, white stockings, silver wig, blue heels, blue makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-057",
+        "number": 57,
+        "kind": "outfit",
+        "name": "Violet Doll",
+        "rarity": "rare",
+        "details": "Purple dress, white stockings, purple wig, pink makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-058",
+        "number": 58,
+        "kind": "outfit",
+        "name": "Candy Doll",
+        "rarity": "rare",
+        "details": "Pink dress, white stockings, pink and white wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-059",
+        "number": 59,
+        "kind": "outfit",
+        "name": "Midnight Doll",
+        "rarity": "rare",
+        "details": "Black dress, white stockings, black wig, black makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-060",
+        "number": 60,
+        "kind": "outfit",
+        "name": "Scarlet Doll",
+        "rarity": "rare",
+        "details": "Red dress, black stockings, red and black wig, red heels",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-061",
+        "number": 61,
+        "kind": "outfit",
+        "name": "Garden Date",
+        "rarity": "rare",
+        "details": "Green dress, white stockings, brunette wig, pink makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-062",
+        "number": 62,
+        "kind": "outfit",
+        "name": "Cocoa Date",
+        "rarity": "rare",
+        "details": "Brown dress, black stockings, curly brunette wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-063",
+        "number": 63,
+        "kind": "outfit",
+        "name": "Pink Promenade",
+        "rarity": "rare",
+        "details": "Pink top, pink skirt, white stockings, pink heels, pink wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-064",
+        "number": 64,
+        "kind": "outfit",
+        "name": "Blue Promenade",
+        "rarity": "rare",
+        "details": "Blue top, blue skirt, white stockings, blue heels, blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-065",
+        "number": 65,
+        "kind": "outfit",
+        "name": "Midnight Promenade",
+        "rarity": "rare",
+        "details": "Black top, black skirt, black stockings, black heels, black wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-066",
+        "number": 66,
+        "kind": "outfit",
+        "name": "Snow Promenade",
+        "rarity": "rare",
+        "details": "White top, white skirt, pink stockings, white heels, platinum blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-067",
+        "number": 67,
+        "kind": "outfit",
+        "name": "Violet Silhouette",
+        "rarity": "rare",
+        "details": "Purple leggings, black top, purple heels, purple wig, black makeup",
+        "unlock": "rank",
+        "rankLevel": 30
+    },
+    {
+        "id": "outfit-068",
+        "number": 68,
+        "kind": "outfit",
+        "name": "Citrus Tease",
+        "rarity": "rare",
+        "details": "Orange sports bra, black skirt, black stockings, black heels, brunette wig",
+        "unlock": "rank",
+        "rankLevel": 32
+    },
+    {
+        "id": "outfit-069",
+        "number": 69,
+        "kind": "outfit",
+        "name": "Purple Tease",
+        "rarity": "rare",
+        "details": "Purple sports bra, black skirt, black stockings, purple heels, purple wig",
+        "unlock": "rank",
+        "rankLevel": 34
+    },
+    {
+        "id": "outfit-070",
+        "number": 70,
+        "kind": "outfit",
+        "name": "Raceway Crush",
+        "rarity": "rare",
+        "details": "Pink racing bodysuit, pink heels, pink wig, pink makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-071",
+        "number": 71,
+        "kind": "outfit",
+        "name": "Midnight Cover Story",
+        "rarity": "rare",
+        "details": "Black dress, long overcoat, black stockings, black heels, black wig",
+        "unlock": "rank",
+        "rankLevel": 36
+    },
+    {
+        "id": "outfit-072",
+        "number": 72,
+        "kind": "outfit",
+        "name": "Snow Cover Story",
+        "rarity": "rare",
+        "details": "White dress, long overcoat, white stockings, white heels, platinum blonde wig",
+        "unlock": "rank",
+        "rankLevel": 38
+    },
+    {
+        "id": "outfit-073",
+        "number": 73,
+        "kind": "outfit",
+        "name": "Scarlet Cover Story",
+        "rarity": "rare",
+        "details": "Red dress, long overcoat, black stockings, red heels, red and black wig",
+        "unlock": "rank",
+        "rankLevel": 40
+    },
+    {
+        "id": "outfit-074",
+        "number": 74,
+        "kind": "outfit",
+        "name": "Blush Cover Story",
+        "rarity": "rare",
+        "details": "Pink dress, long overcoat, white stockings, pink heels, pink wig",
+        "unlock": "rank",
+        "rankLevel": 42
+    },
+    {
+        "id": "outfit-075",
+        "number": 75,
+        "kind": "outfit",
+        "name": "Blue Cover Story",
+        "rarity": "rare",
+        "details": "Blue dress, long overcoat, white stockings, blue heels, silver wig",
+        "unlock": "rank",
+        "rankLevel": 43
+    },
+    {
+        "id": "outfit-076",
+        "number": 76,
+        "kind": "outfit",
+        "name": "Angel Lingerie",
+        "rarity": "epic",
+        "details": "White panties, white bra, white stockings, white heels, platinum blonde wig, pink makeup",
+        "unlock": "start"
+    },
+    {
+        "id": "outfit-077",
+        "number": 77,
+        "kind": "outfit",
+        "name": "Devil Lingerie",
+        "rarity": "epic",
+        "details": "Black panties, red bra, black stockings, red heels, red and black wig, red makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-078",
+        "number": 78,
+        "kind": "outfit",
+        "name": "Bubblegum Lingerie",
+        "rarity": "epic",
+        "details": "Hot pink panties, hot pink bra, pink stockings, hot pink heels, pink wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-079",
+        "number": 79,
+        "kind": "outfit",
+        "name": "Midnight Lingerie",
+        "rarity": "epic",
+        "details": "Black panties, black bra, black stockings, black heels, black wig, black makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-080",
+        "number": 80,
+        "kind": "outfit",
+        "name": "Scarlet Lingerie",
+        "rarity": "epic",
+        "details": "Red panties, red bra, black stockings, red heels, red and black wig, red makeup",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-081",
+        "number": 81,
+        "kind": "outfit",
+        "name": "Violet Lingerie",
+        "rarity": "epic",
+        "details": "Purple panties, purple bra, black stockings, purple heels, purple wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-082",
+        "number": 82,
+        "kind": "outfit",
+        "name": "Blue Lingerie",
+        "rarity": "epic",
+        "details": "Blue panties, blue bra, white stockings, blue heels, silver wig, blue makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-083",
+        "number": 83,
+        "kind": "outfit",
+        "name": "Snow Lingerie",
+        "rarity": "epic",
+        "details": "White panties, white bra, white stockings, white heels, blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-084",
+        "number": 84,
+        "kind": "outfit",
+        "name": "Candy Lingerie",
+        "rarity": "epic",
+        "details": "Pink panties, white bra, pink stockings, white heels, pink and white wig, pink makeup",
+        "unlock": "rank",
+        "rankLevel": 41
+    },
+    {
+        "id": "outfit-085",
+        "number": 85,
+        "kind": "outfit",
+        "name": "Emerald Lingerie",
+        "rarity": "epic",
+        "details": "Green panties, green bra, black stockings, black heels, brunette wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-086",
+        "number": 86,
+        "kind": "outfit",
+        "name": "Honey Lingerie",
+        "rarity": "epic",
+        "details": "Yellow panties, yellow bra, white stockings, yellow heels, blonde wig",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-087",
+        "number": 87,
+        "kind": "outfit",
+        "name": "Silver Illusion",
+        "rarity": "epic",
+        "details": "White panties, white bra, silver dress, white stockings, silver wig, blue makeup",
+        "unlock": "rank",
+        "rankLevel": 44
+    },
+    {
+        "id": "outfit-088",
+        "number": 88,
+        "kind": "outfit",
+        "name": "Yes Daddy",
+        "rarity": "epic",
+        "details": "Yes Daddy bodysuit, black stockings, black heels, black wig, red makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-089",
+        "number": 89,
+        "kind": "outfit",
+        "name": "Pit Girl",
+        "rarity": "epic",
+        "details": "Pink racing bodysuit, white stockings, hot pink heels, pink wig, pink makeup",
+        "unlock": "rank",
+        "rankLevel": 46
+    },
+    {
+        "id": "outfit-090",
+        "number": 90,
+        "kind": "outfit",
+        "name": "After-Dark Overcoat",
+        "rarity": "epic",
+        "details": "Black panties, red bra, black stockings, red heels, long overcoat, red and black wig",
+        "unlock": "rank",
+        "rankLevel": 48
+    },
+    {
+        "id": "outfit-091",
+        "number": 91,
+        "kind": "outfit",
+        "name": "The Pretty Pink Helper",
+        "rarity": "legendary",
+        "details": "Black and pink maid dress, pink stockings, pink heeled boots, pink wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-092",
+        "number": 92,
+        "kind": "outfit",
+        "name": "The Scary Girly",
+        "rarity": "legendary",
+        "details": "Black dress, black stockings, black heeled boots, black makeup, black wig",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-093",
+        "number": 93,
+        "kind": "outfit",
+        "name": "The Rubberdoll",
+        "rarity": "legendary",
+        "details": "Pink latex catsuit, pink boots, pink hood",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-094",
+        "number": 94,
+        "kind": "outfit",
+        "name": "The Leatherworker",
+        "rarity": "legendary",
+        "details": "Leather catsuit, matching heels, pink and white wig, slutty makeup",
+        "unlock": "rank",
+        "rankLevel": 45
+    },
+    {
+        "id": "outfit-095",
+        "number": 95,
+        "kind": "outfit",
+        "name": "The Bondage Slave",
+        "rarity": "legendary",
+        "details": "Latex maid dress, black hood, white heels, ball gag",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-096",
+        "number": 96,
+        "kind": "outfit",
+        "name": "The Cheerleader",
+        "rarity": "legendary",
+        "details": "Cheerleader dress, pink trainers, blonde wig, pink makeup",
+        "unlock": "shop"
+    },
+    {
+        "id": "outfit-097",
+        "number": 97,
+        "kind": "outfit",
+        "name": "The Ultimate Risk",
+        "rarity": "legendary",
+        "details": "Long overcoat, black boots",
+        "unlock": "rank",
+        "rankLevel": 50
+    },
+    {
+        "id": "outfit-098",
+        "number": 98,
+        "kind": "outfit",
+        "name": "Princess Belle",
+        "rarity": "legendary",
+        "details": "Princess Belle dress, curly brunette wig, pink makeup, yellow heels",
+        "unlock": "milestone"
+    },
+    {
+        "id": "outfit-099",
+        "number": 99,
+        "kind": "outfit",
+        "name": "Princess Elsa",
+        "rarity": "legendary",
+        "details": "Princess Elsa dress, platinum blonde wig, pink makeup, blue heels",
+        "unlock": "rank",
+        "rankLevel": 47
+    },
+    {
+        "id": "outfit-100",
+        "number": 100,
+        "kind": "outfit",
+        "name": "Divine Spirit",
+        "rarity": "legendary",
+        "details": "White see-through dress, white heels, white stockings, silver wig",
+        "unlock": "rank",
+        "rankLevel": 49
+    }
+];
+  const STARTING_OUTFIT_IDS = OUTFIT_LIBRARY.filter(item => item.unlock === 'start').map(item => item.id);
+  const SHOP_OUTFIT_IDS = OUTFIT_LIBRARY.filter(item => item.unlock === 'shop').map(item => item.id);
 
   const SHOP_ITEMS = [
     { id: 'theme-neon', kind: 'theme', name: 'Neon Dressing Room', basePrice: 0, themeClass: 'theme-neon', description: 'Default hot pink and purple neon dressing-room UI.' },
-    { id: 'theme-purple', kind: 'theme', name: 'Purple Glow', basePrice: 100, themeClass: 'theme-purple', description: 'Deep violet glow with softer pink highlights.' },
-    { id: 'theme-electric', kind: 'theme', name: 'Electric Blue', basePrice: 100, themeClass: 'theme-electric', description: 'Cyan neon, sharp contrast, cool nightclub energy.' },
-    { id: 'theme-blackout', kind: 'theme', name: 'Pink Blackout', basePrice: 150, themeClass: 'theme-blackout', description: 'Black and deep red-pink with a punchier glow.' },
-    { id: 'theme-vip', kind: 'theme', name: 'VIP Gold', basePrice: 250, themeClass: 'theme-vip', description: 'Gold VIP lounge styling with neon highlights.' },
+    { id: 'theme-purple', kind: 'theme', name: 'Purple Glow', basePrice: 120, themeClass: 'theme-purple', description: 'Deep violet glow with softer pink highlights.' },
+    { id: 'theme-electric', kind: 'theme', name: 'Electric Blue', basePrice: 120, themeClass: 'theme-electric', description: 'Cyan neon, sharp contrast, cool nightclub energy.' },
+    { id: 'theme-blackout', kind: 'theme', name: 'Pink Blackout', basePrice: 180, themeClass: 'theme-blackout', description: 'Black and deep red-pink with a punchier glow.' },
+    { id: 'theme-vip', kind: 'theme', name: 'VIP Gold', basePrice: 350, themeClass: 'theme-vip', description: 'Gold VIP lounge styling with neon highlights.' },
 
     { id: 'effect-basic', kind: 'effect', name: 'Basic Dice', basePrice: 0, effectClass: 'pulse-roll', description: 'Simple roll pulse.' },
     { id: 'effect-neon', kind: 'effect', name: 'Neon Dice', basePrice: 75, effectClass: 'effect-neon', description: 'Bright neon flash on every roll.' },
@@ -662,20 +1622,9 @@ h3 { margin-bottom: 8px; }
     { id: 'effect-glitch', kind: 'effect', name: 'Glitch Roll', basePrice: 125, effectClass: 'effect-glitch', description: 'Fast glitchy shake before the result lands.' },
     { id: 'effect-sparkle', kind: 'effect', name: 'Sparkle Roll', basePrice: 150, effectClass: 'effect-sparkle', description: 'Extra bright sparkle glow.' },
     { id: 'effect-vip', kind: 'effect', name: 'VIP Flash', basePrice: 250, effectClass: 'effect-vip', description: 'Premium flash effect with a stronger outline.' },
-
-    { id: 'outfit-angel-lingerie', kind: 'outfit', name: 'Angel Lingerie', rarity: 'common', details: 'All white lingerie and heels only.' },
-    { id: 'outfit-devil-lingerie', kind: 'outfit', name: 'Devil Lingerie', rarity: 'common', details: 'Black and red heels and lingerie only.' },
-    { id: 'outfit-casual-girly', kind: 'outfit', name: 'Casual Girly', rarity: 'common', details: 'Jeans, trainers, t-shirt.' },
-    { id: 'outfit-elegant-girly', kind: 'outfit', name: 'Elegant Girly', rarity: 'common', details: 'Elegant dress and heels.' },
-    { id: 'outfit-cheerleader', kind: 'outfit', name: 'Cheerleader', rarity: 'rare' },
-    { id: 'outfit-maid', kind: 'outfit', name: 'Maid', rarity: 'rare' },
-    { id: 'outfit-schoolgirl', kind: 'outfit', name: 'Schoolgirl', rarity: 'rare' },
-    { id: 'outfit-goth', kind: 'outfit', name: 'Goth', rarity: 'rare' },
-    { id: 'outfit-belle', kind: 'outfit', name: 'Princess Belle Cosplay', rarity: 'epic' },
-    { id: 'outfit-elsa', kind: 'outfit', name: 'Elsa Cosplay', rarity: 'epic' },
-    { id: 'outfit-latex-maid', kind: 'outfit', name: 'Latex Maid', rarity: 'legendary' },
-    { id: 'outfit-latex-doll', kind: 'outfit', name: 'Latex Doll', rarity: 'legendary' }
+    ...OUTFIT_LIBRARY.filter(item => item.unlock === 'shop')
   ];
+
 
   const DEFAULT_LOCATIONS = [
     'Apartment hallway', 'Front door', 'Mailbox', 'Trash bins', 'Car park', 'Quiet street', 'Park bench', 'Corner shop'
@@ -704,6 +1653,574 @@ h3 { margin-bottom: 8px; }
 
   const TRAINING_MILESTONE_REWARDS = { small: 250, medium: 750, big: 1500, major: 3000 };
 
+  const MAIN_MILESTONE_OUTFIT_REWARDS = {
+    m002: 'outfit-007', m006: 'outfit-008', m011: 'outfit-009', m017: 'outfit-010', m024: 'outfit-019',
+    m032: 'outfit-020', m041: 'outfit-023', m050: 'outfit-024', m060: 'outfit-025', m070: 'outfit-026',
+    m078: 'outfit-030', m085: 'outfit-031', m091: 'outfit-056', m096: 'outfit-057', m100: 'outfit-093'
+  };
+
+  const TRAINING_MILESTONE_OUTFIT_REWARDS = {
+    tm002: 'outfit-059', tm006: 'outfit-061', tm011: 'outfit-062', tm017: 'outfit-063', tm024: 'outfit-064',
+    tm032: 'outfit-065', tm041: 'outfit-066', tm050: 'outfit-070', tm060: 'outfit-080', tm070: 'outfit-081',
+    tm078: 'outfit-083', tm085: 'outfit-085', tm091: 'outfit-086', tm096: 'outfit-095', tm100: 'outfit-098'
+  };
+
+  const RANK_REWARDS = [
+    {
+        "rank": 1,
+        "label": "+50 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 50
+            }
+        ]
+    },
+    {
+        "rank": 2,
+        "label": "Outfit: Silver Sunday",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-032"
+            }
+        ]
+    },
+    {
+        "rank": 3,
+        "label": "+750 Obedience",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 750
+            }
+        ]
+    },
+    {
+        "rank": 4,
+        "label": "Outfit: Pink Candy Run",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-033"
+            }
+        ]
+    },
+    {
+        "rank": 5,
+        "label": "25% secret shop discount",
+        "rewards": [
+            {
+                "type": "shopDiscount",
+                "percent": 0.25
+            }
+        ]
+    },
+    {
+        "rank": 6,
+        "label": "Outfit: Black Coffee",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-034"
+            }
+        ]
+    },
+    {
+        "rank": 7,
+        "label": "+75 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 75
+            }
+        ]
+    },
+    {
+        "rank": 8,
+        "label": "Outfit: Scarlet Streak",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-035"
+            }
+        ]
+    },
+    {
+        "rank": 9,
+        "label": "+1,000 Obedience",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 1000
+            }
+        ]
+    },
+    {
+        "rank": 10,
+        "label": "Outfit: Platinum Breeze + Price Freeze",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-036"
+            },
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 11,
+        "label": "+100 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 100
+            }
+        ]
+    },
+    {
+        "rank": 12,
+        "label": "Outfit: Garden Blush",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-037"
+            }
+        ]
+    },
+    {
+        "rank": 13,
+        "label": "25% training upgrade discount",
+        "rewards": [
+            {
+                "type": "trainingDiscount",
+                "percent": 0.25
+            }
+        ]
+    },
+    {
+        "rank": 14,
+        "label": "Outfit: Cherry Daylight",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-039"
+            }
+        ]
+    },
+    {
+        "rank": 15,
+        "label": "+1,500 Obedience",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 1500
+            }
+        ]
+    },
+    {
+        "rank": 16,
+        "label": "Outfit: Golden Hour",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-040"
+            }
+        ]
+    },
+    {
+        "rank": 17,
+        "label": "+125 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 125
+            }
+        ]
+    },
+    {
+        "rank": 18,
+        "label": "Outfit: Silver Glow",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-041"
+            }
+        ]
+    },
+    {
+        "rank": 19,
+        "label": "35% secret shop discount",
+        "rewards": [
+            {
+                "type": "shopDiscount",
+                "percent": 0.35
+            }
+        ]
+    },
+    {
+        "rank": 20,
+        "label": "Outfit: Blush Under Cover + Price Freeze",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-042"
+            },
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 21,
+        "label": "+2,000 Obedience",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 2000
+            }
+        ]
+    },
+    {
+        "rank": 22,
+        "label": "Outfit: Violet Velvet",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-050"
+            }
+        ]
+    },
+    {
+        "rank": 23,
+        "label": "+150 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 150
+            }
+        ]
+    },
+    {
+        "rank": 24,
+        "label": "Outfit: Blue Under Cover",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-043"
+            }
+        ]
+    },
+    {
+        "rank": 25,
+        "label": "35% training upgrade discount",
+        "rewards": [
+            {
+                "type": "trainingDiscount",
+                "percent": 0.35
+            }
+        ]
+    },
+    {
+        "rank": 26,
+        "label": "Outfit: Midnight Under Cover",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-044"
+            }
+        ]
+    },
+    {
+        "rank": 27,
+        "label": "+2,500 Obedience",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 2500
+            }
+        ]
+    },
+    {
+        "rank": 28,
+        "label": "Outfit: Snow Under Cover",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-045"
+            }
+        ]
+    },
+    {
+        "rank": 29,
+        "label": "Price Freeze",
+        "rewards": [
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 30,
+        "label": "Outfit: Violet Silhouette + 50% shop discount",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-067"
+            },
+            {
+                "type": "shopDiscount",
+                "percent": 0.5
+            }
+        ]
+    },
+    {
+        "rank": 31,
+        "label": "+225 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 225
+            }
+        ]
+    },
+    {
+        "rank": 32,
+        "label": "Outfit: Citrus Tease",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-068"
+            }
+        ]
+    },
+    {
+        "rank": 33,
+        "label": "40% training upgrade discount",
+        "rewards": [
+            {
+                "type": "trainingDiscount",
+                "percent": 0.4
+            }
+        ]
+    },
+    {
+        "rank": 34,
+        "label": "Outfit: Purple Tease",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-069"
+            }
+        ]
+    },
+    {
+        "rank": 35,
+        "label": "+3,500 Obedience + Price Freeze",
+        "rewards": [
+            {
+                "type": "obedience",
+                "amount": 3500
+            },
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 36,
+        "label": "Outfit: Midnight Cover Story",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-071"
+            }
+        ]
+    },
+    {
+        "rank": 37,
+        "label": "+275 Exhys",
+        "rewards": [
+            {
+                "type": "exhys",
+                "amount": 275
+            }
+        ]
+    },
+    {
+        "rank": 38,
+        "label": "Outfit: Snow Cover Story",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-072"
+            }
+        ]
+    },
+    {
+        "rank": 39,
+        "label": "50% secret shop discount",
+        "rewards": [
+            {
+                "type": "shopDiscount",
+                "percent": 0.5
+            }
+        ]
+    },
+    {
+        "rank": 40,
+        "label": "Outfit: Scarlet Cover Story + 400 Exhys",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-073"
+            },
+            {
+                "type": "exhys",
+                "amount": 400
+            }
+        ]
+    },
+    {
+        "rank": 41,
+        "label": "Outfit: Candy Lingerie",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-084"
+            }
+        ]
+    },
+    {
+        "rank": 42,
+        "label": "Outfit: Blush Cover Story + 50% training discount",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-074"
+            },
+            {
+                "type": "trainingDiscount",
+                "percent": 0.5
+            }
+        ]
+    },
+    {
+        "rank": 43,
+        "label": "Outfit: Blue Cover Story",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-075"
+            }
+        ]
+    },
+    {
+        "rank": 44,
+        "label": "Outfit: Silver Illusion + Price Freeze",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-087"
+            },
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 45,
+        "label": "Outfit: The Leatherworker + 5,000 Obedience",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-094"
+            },
+            {
+                "type": "obedience",
+                "amount": 5000
+            }
+        ]
+    },
+    {
+        "rank": 46,
+        "label": "Outfit: Pit Girl + 50% shop discount",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-089"
+            },
+            {
+                "type": "shopDiscount",
+                "percent": 0.5
+            }
+        ]
+    },
+    {
+        "rank": 47,
+        "label": "Outfit: Princess Elsa + Price Freeze",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-099"
+            },
+            {
+                "type": "priceFreeze",
+                "count": 1
+            }
+        ]
+    },
+    {
+        "rank": 48,
+        "label": "Outfit: After-Dark Overcoat + 500 Exhys",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-090"
+            },
+            {
+                "type": "exhys",
+                "amount": 500
+            }
+        ]
+    },
+    {
+        "rank": 49,
+        "label": "Outfit: Divine Spirit + 50% training discount",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-100"
+            },
+            {
+                "type": "trainingDiscount",
+                "percent": 0.5
+            }
+        ]
+    },
+    {
+        "rank": 50,
+        "label": "Outfit: The Ultimate Risk + 1,000 Exhys",
+        "rewards": [
+            {
+                "type": "outfit",
+                "outfitId": "outfit-097"
+            },
+            {
+                "type": "exhys",
+                "amount": 1000
+            }
+        ]
+    }
+];
+
+
   let state = loadState();
   let activeView = 'home';
   let activeShopTab = 'themes';
@@ -714,6 +2231,7 @@ h3 { margin-bottom: 8px; }
     home: document.getElementById('view-home'),
     wardrobe: document.getElementById('view-wardrobe'),
     training: document.getElementById('view-training'),
+    rank: document.getElementById('view-rank'),
     lists: document.getElementById('view-lists'),
     shop: document.getElementById('view-shop')
   };
@@ -724,14 +2242,15 @@ h3 { margin-bottom: 8px; }
       wardrobe[cat] = defaultColorsFor(cat);
     });
     return {
-      version: 1,
+      version: 12,
       exhys: 0,
       obedience: 0,
       totalPurchases: 0,
+      shopMultiplier: 1,
       activeTheme: 'theme-neon',
       activeEffect: 'effect-basic',
       randomEffect: false,
-      purchased: ['theme-neon', 'effect-basic'],
+      purchased: ['theme-neon', 'effect-basic', ...STARTING_OUTFIT_IDS],
       wardrobe,
       dareCount: 3,
       locations: DEFAULT_LOCATIONS.map(text => makeListItem(text)),
@@ -741,6 +2260,8 @@ h3 { margin-bottom: 8px; }
       milestoneLog: [],
       discounts: {},
       priceFreezes: 0,
+      trainingUpgradeDiscounts: {},
+      sissyRank: createDefaultSissyRankState(),
       stats: createDefaultStats(),
       training: createDefaultTrainingState()
     };
@@ -764,8 +2285,13 @@ h3 { margin-bottom: 8px; }
       shopOutfitCompletions: 0,
       randomOutfitCompletions: 0,
       matchingOutfitCompletions: 0,
-      mixedOutfitCompletions: 0
+      mixedOutfitCompletions: 0,
+      outfitLibraryCompletions: 0
     };
+  }
+
+  function createDefaultSissyRankState() {
+    return { rank: 0, xp: 0, totalXp: 0, rewardsClaimed: [] };
   }
 
   function createDefaultTrainingState() {
@@ -858,19 +2384,32 @@ h3 { margin-bottom: 8px; }
     });
     merged.locations = Array.isArray(merged.locations) ? merged.locations : fresh.locations;
     merged.dares = Array.isArray(merged.dares) ? merged.dares : fresh.dares;
-    merged.purchased = Array.from(new Set([...(merged.purchased || []), 'theme-neon', 'effect-basic']));
+    merged.purchased = Array.from(new Set([...(merged.purchased || []), 'theme-neon', 'effect-basic', ...STARTING_OUTFIT_IDS]));
     merged.totalPurchases = Number(merged.totalPurchases || 0);
+    merged.shopMultiplier = Number(merged.shopMultiplier || legacyShopMultiplier(merged.totalPurchases));
     merged.exhys = Number(merged.exhys || 0);
     merged.obedience = Number(merged.obedience || 0);
     merged.dareCount = Number(merged.dareCount || 1);
     merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
     merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
     merged.discounts = merged.discounts && typeof merged.discounts === 'object' ? merged.discounts : {};
+    merged.trainingUpgradeDiscounts = merged.trainingUpgradeDiscounts && typeof merged.trainingUpgradeDiscounts === 'object' ? merged.trainingUpgradeDiscounts : {};
     merged.priceFreezes = Number(merged.priceFreezes || 0);
+    merged.sissyRank = migrateSissyRankState(merged.sissyRank);
     merged.stats = { ...createDefaultStats(), ...(merged.stats || {}) };
     if (!Object.prototype.hasOwnProperty.call(merged.stats, 'taskExhysEarned')) merged.stats.taskExhysEarned = 0;
     merged.training = migrateTrainingState(merged.training);
     // Older builds had local history/saved rolls. Keep imported data valid, but do not render or use it.
+    return merged;
+  }
+
+  function migrateSissyRankState(rankState) {
+    const fresh = createDefaultSissyRankState();
+    const merged = { ...fresh, ...(rankState || {}) };
+    merged.rank = Math.min(50, Math.max(0, Number(merged.rank || 0)));
+    merged.xp = Math.max(0, Number(merged.xp || 0));
+    merged.totalXp = Math.max(0, Number(merged.totalXp || 0));
+    merged.rewardsClaimed = Array.isArray(merged.rewardsClaimed) ? merged.rewardsClaimed : [];
     return merged;
   }
 
@@ -963,9 +2502,20 @@ h3 { margin-bottom: 8px; }
     return 0;
   }
 
+  function legacyShopMultiplier(purchases) {
+    let multiplier = 1;
+    const count = Math.max(0, Number(purchases || 0));
+    for (let i = 0; i < count; i++) multiplier *= (1 + Math.max(0.03, 0.10 - (i * 0.002)));
+    return multiplier;
+  }
+
+  function currentInflationRate() {
+    return Math.max(0.03, 0.10 - (Number(state.totalPurchases || 0) * 0.002));
+  }
+
   function currentPrice(item) {
     if (!item.basePrice) return 0;
-    const raw = item.basePrice * Math.pow(1.1, state.totalPurchases || 0);
+    const raw = item.basePrice * Number(state.shopMultiplier || 1);
     return Math.ceil(raw * 10) / 10;
   }
 
@@ -1046,10 +2596,10 @@ h3 { margin-bottom: 8px; }
     const stats = state.stats || createDefaultStats();
     if (stat === 'locationsCount') return state.locations.length;
     if (stat === 'daresCount') return state.dares.length;
-    if (stat === 'outfitsUnlocked') return SHOP_ITEMS.filter(item => item.kind === 'outfit' && isOwned(item.id)).length;
+    if (stat === 'outfitsUnlocked') return OUTFIT_LIBRARY.filter(item => isOwned(item.id)).length;
     if (stat === 'themesUnlocked') return SHOP_ITEMS.filter(item => item.kind === 'theme' && isOwned(item.id)).length;
     if (stat === 'effectsUnlocked') return SHOP_ITEMS.filter(item => item.kind === 'effect' && isOwned(item.id)).length;
-    if (stat === 'allOutfitsUnlocked') return SHOP_ITEMS.filter(item => item.kind === 'outfit').every(item => isOwned(item.id)) ? 1 : 0;
+    if (stat === 'allOutfitsUnlocked') return OUTFIT_LIBRARY.every(item => isOwned(item.id)) ? 1 : 0;
     if (stat === 'wardrobeCoverage') return CATEGORIES.filter(cat => (state.wardrobe[cat] || []).length > 0).length;
     return Number(stats[stat] || 0);
   }
@@ -1078,7 +2628,7 @@ h3 { margin-bottom: 8px; }
     };
   }
 
-  function recordMilestoneUnlock(milestone, reward, legendaryBonus) {
+  function recordMilestoneUnlock(milestone, reward, legendaryBonus, rewardText = '') {
     const reveal = milestoneReveal(milestone);
     const existing = new Set((state.milestoneLog || []).map(entry => entry.id));
     if (existing.has(milestone.id)) return;
@@ -1089,6 +2639,7 @@ h3 { margin-bottom: 8px; }
       condition: reveal.condition,
       size: milestone.size,
       reward,
+      rewardText,
       legendaryBonus: legendaryBonus || '',
       unlockedAt: new Date().toISOString()
     });
@@ -1131,7 +2682,7 @@ h3 { margin-bottom: 8px; }
         </div>
         <div style="text-align:right;display:grid;gap:6px;justify-items:end">
           <span class="badge ${esc(entry.size)}">${esc(entry.size)}</span>
-          <span class="price ${entry.currency === 'Obedience' ? 'obedience-price' : ''}">+${formatNum(entry.reward)} ${esc(entry.currency)}</span>
+          <span class="price ${entry.currency === 'Obedience' ? 'obedience-price' : ''}">${entry.rewardText ? esc(entry.rewardText) : `+${formatNum(entry.reward)} ${esc(entry.currency)}`}</span>
         </div>
       </div>
     `).join('')}</div>`;
@@ -1146,27 +2697,37 @@ h3 { margin-bottom: 8px; }
 
       unlocked.add(milestone.id);
       state.milestonesUnlocked.push(milestone.id);
-      const reward = MILESTONE_REWARDS[milestone.size] || 0;
-      if (reward > 0) {
-        state.exhys = Math.round((state.exhys + reward) * 10) / 10;
-      }
-
+      const outfitRewardId = MAIN_MILESTONE_OUTFIT_REWARDS[milestone.id];
+      let reward = MILESTONE_REWARDS[milestone.size] || 0;
       let legendaryText = '';
-      if (milestone.size === 'major') {
-        legendaryText = applyLegendaryBonus().replace(/^Legendary Bonus:\s*/i, '');
-        messages.push(`Major milestone unlocked: +${reward} Exhys. Legendary Bonus: ${legendaryText}`);
+      let rewardText = '';
+      const sizeLabel = milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1);
+
+      if (outfitRewardId) {
+        const outfitName = unlockOutfit(outfitRewardId) || 'Outfit';
+        reward = 0;
+        rewardText = `Outfit: ${outfitName}`;
+        messages.push(`${sizeLabel} milestone unlocked: outfit reward — ${outfitName}.`);
       } else {
-        messages.push(`${milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1)} milestone unlocked: +${reward} Exhys.`);
+        if (reward > 0) state.exhys = Math.round((state.exhys + reward) * 10) / 10;
+        if (milestone.size === 'major') {
+          legendaryText = applyLegendaryBonus().replace(/^Legendary Bonus:\s*/i, '');
+          messages.push(`Major milestone unlocked: +${formatNum(reward)} Exhys. Legendary Bonus: ${legendaryText}`);
+        } else {
+          messages.push(`${sizeLabel} milestone unlocked: +${formatNum(reward)} Exhys.`);
+        }
       }
+      const rankMessages = addRankXp(15, 'Milestone unlocked');
       lastMilestoneFlashId = milestone.id;
-      recordMilestoneUnlock(milestone, reward, legendaryText);
+      recordMilestoneUnlock(milestone, reward, legendaryText, rewardText);
+      messages.push(...rankMessages);
     }
     return messages;
   }
 
   function applyLegendaryBonus() {
     const possible = [];
-    const lockedOutfits = SHOP_ITEMS.filter(item => item.kind === 'outfit' && !isOwned(item.id));
+    const lockedOutfits = OUTFIT_LIBRARY.filter(item => !isOwned(item.id));
     const lockedDiscountTargets = SHOP_ITEMS.filter(item => !isOwned(item.id) && itemBasePrice(item) > 0);
 
     if (lockedOutfits.length) possible.push('free-outfit');
@@ -1176,10 +2737,9 @@ h3 { margin-bottom: 8px; }
     const picked = choice(possible);
     if (picked === 'free-outfit') {
       const outfit = choice(lockedOutfits);
-      state.purchased.push(outfit.id);
-      if (state.discounts?.[outfit.id]) delete state.discounts[outfit.id];
+      unlockOutfit(outfit.id);
       state.stats.freeOutfitsUnlocked += 1;
-      return `Legendary Bonus: free outfit unlocked.`;
+      return `Legendary Bonus: free outfit unlocked (${outfit.name}).`;
     }
 
     if (picked === 'secret-discount') {
@@ -1283,19 +2843,32 @@ h3 { margin-bottom: 8px; }
       if (trainingStatValue(milestone.stat) < milestone.threshold) continue;
       unlocked.add(milestone.id);
       training.milestonesUnlocked.push(milestone.id);
-      const reward = TRAINING_MILESTONE_REWARDS[milestone.size] || 0;
-      state.obedience = Math.round((Number(state.obedience || 0) + reward) * 10) / 10;
+      const outfitRewardId = TRAINING_MILESTONE_OUTFIT_REWARDS[milestone.id];
+      let reward = TRAINING_MILESTONE_REWARDS[milestone.size] || 0;
+      let rewardText = '';
       const reveal = trainingMilestoneReveal(milestone);
+      const sizeLabel = milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1);
+      if (outfitRewardId) {
+        const outfitName = unlockOutfit(outfitRewardId) || 'Outfit';
+        reward = 0;
+        rewardText = `Outfit: ${outfitName}`;
+        messages.push(`${sizeLabel} training milestone unlocked: outfit reward — ${outfitName}.`);
+      } else {
+        state.obedience = Math.round((Number(state.obedience || 0) + reward) * 10) / 10;
+        messages.push(`${sizeLabel} training milestone unlocked: +${formatNum(reward)} Obedience.`);
+      }
+      const rankMessages = addRankXp(15, 'Milestone unlocked');
       training.milestoneLog.unshift({
         id: milestone.id,
         title: reveal.title,
         condition: reveal.condition,
         size: milestone.size,
         reward,
+        rewardText,
         unlockedAt: new Date().toISOString()
       });
       lastMilestoneFlashId = milestone.id;
-      messages.push(`${milestone.size.charAt(0).toUpperCase() + milestone.size.slice(1)} training milestone unlocked: +${formatNum(reward)} Obedience.`);
+      messages.push(...rankMessages);
     }
     return messages;
   }
@@ -1343,6 +2916,7 @@ h3 { margin-bottom: 8px; }
     renderHome();
     renderWardrobe();
     renderTraining();
+    renderRank();
     renderLists();
     renderShop();
   }
@@ -1371,7 +2945,7 @@ h3 { margin-bottom: 8px; }
               <h2>Roll Full Dare</h2>
               <p class="muted">Roll one outfit, one location, and your chosen number of dares.</p>
             </div>
-            <span class="badge">30% matching outfit</span>
+            <span class="badge">Weighted outfit library</span>
           </div>
 
           <div class="roll-controls">
@@ -1381,7 +2955,7 @@ h3 { margin-bottom: 8px; }
                 ${Array.from({ length: Math.min(10, maxDares) }, (_, i) => i + 1).map(n => `<option value="${n}" ${n === selectedCount ? 'selected' : ''}>${n}</option>`).join('')}
               </select>
             </label>
-            <span class="badge">Shop outfit chance: 25%</span>
+            <span class="badge">Outfit weights: 40 / 20 / 8 / 2</span>
             <span class="badge">Rewards hidden until done</span>
           </div>
 
@@ -1431,31 +3005,39 @@ h3 { margin-bottom: 8px; }
     const roll = state.currentRoll;
     if (!roll) return `<div class="empty">No roll yet. Choose the number of dares and press Roll Full Dare.</div>`;
 
-    const outfitHtml = roll.outfit.source === 'shop'
-      ? `<li><span>${esc(roll.outfit.name)}</span><span class="badge ${esc(roll.outfit.rarity || '')}">${esc(roll.outfit.rarityLabel || 'Shop')}</span></li>${roll.outfit.details ? `<li><span>${esc(roll.outfit.details)}</span></li>` : ''}`
-      : roll.outfit.items.map(item => `<li><span>${esc(item)}</span></li>`).join('') || `<li><span>No outfit categories had selected colors.</span></li>`;
+    let outfitHtml = '';
+    if (roll.outfit?.source === 'random') {
+      outfitHtml = roll.outfit.items.map(item => `<li><span>${esc(item)}</span></li>`).join('') || `<li><span>No outfit categories had selected colors.</span></li>`;
+    } else {
+      const pieces = roll.outfit?.pieces || String(roll.outfit?.details || '').split(',').map(x => x.trim()).filter(Boolean);
+      outfitHtml = `<li><span>${esc(roll.outfit?.name || 'Outfit')}</span><span class="badge ${esc(roll.outfit?.rarity || '')}">${esc(roll.outfit?.rarityLabel || 'Outfit')}</span></li>` +
+        pieces.map(piece => `<li><span>${esc(piece)}</span></li>`).join('');
+    }
+
+    const outfitTitle = roll.outfit?.source === 'random'
+      ? `Outfit · ${esc(roll.outfit.template || 'Legacy')} · ${roll.outfit.matching ? 'Matching' : 'Mixed'}`
+      : 'Outfit · Library';
 
     return `
       <div class="result-grid">
         <div class="result-section">
-          <h3>Outfit ${roll.outfit.source === 'shop' ? '· Shop Unlock' : `· ${esc(roll.outfit.template)} · ${roll.outfit.matching ? 'Matching' : 'Mixed'}`}</h3>
+          <h3>${outfitTitle}</h3>
           <ul class="result-list">${outfitHtml}</ul>
         </div>
         <div class="result-section">
           <h3>Location</h3>
-          <ul class="result-list"><li><span>${esc(roll.location)}</span></li></ul>
+          <p>${esc(roll.location)}</p>
         </div>
-        <div class="result-section">
+        <div class="result-section wide">
           <h3>Dares</h3>
-          <ul class="result-list">
-            ${roll.dares.map((d, idx) => `<li><span>${idx + 1}. ${esc(d.text)}</span>${roll.done ? '<span class="badge">Done</span>' : ''}</li>`).join('')}
-          </ul>
+          <ol class="dare-result-list">
+            ${roll.dares.map(dare => `<li>${esc(dare.text)} ${roll.done ? `<span class="price">+${formatNum(dare.reward)} Exhys</span>` : '<span class="badge">Hidden reward</span>'}</li>`).join('')}
+          </ol>
         </div>
-        ${roll.done ? `<div class="result-section"><h3>Reward Revealed</h3><p class="big-number">+${formatNum(roll.totalReward)} Exhys</p></div>` : ''}
-        <div class="roll-controls">
-          <button id="markDoneBtn" class="btn primary" ${roll.done ? 'disabled' : ''}>${roll.done ? 'Done Claimed' : 'Mark as Done'}</button>
-          <button id="clearRollBtn" class="btn ghost">Clear</button>
-        </div>
+      </div>
+      <div class="roll-controls" style="margin-top:14px">
+        ${roll.done ? `<span class="price">Total earned: ${formatNum(roll.totalReward)} Exhys</span>` : `<button id="markDoneBtn" class="btn primary">Mark as Done & Reveal Exhys</button>`}
+        <button id="clearRollBtn" class="btn ghost">Clear</button>
       </div>
     `;
   }
@@ -1494,44 +3076,41 @@ h3 { margin-bottom: 8px; }
     toast(`Rolled ${count} dare${count === 1 ? '' : 's'}. Exhys hidden until done.`);
   }
 
+  function unlockedOutfits() {
+    return OUTFIT_LIBRARY.filter(item => isOwned(item.id));
+  }
+
+  function lockedOutfits() {
+    return OUTFIT_LIBRARY.filter(item => !isOwned(item.id));
+  }
+
+  function findOutfit(id) {
+    return OUTFIT_LIBRARY.find(item => item.id === id);
+  }
+
+  function unlockOutfit(id) {
+    const outfit = findOutfit(id);
+    if (!outfit) return '';
+    if (!isOwned(id)) state.purchased.push(id);
+    if (state.discounts?.[id]) delete state.discounts[id];
+    return outfit.name;
+  }
+
   function rollOutfit() {
-    const ownedOutfits = SHOP_ITEMS.filter(item => item.kind === 'outfit' && isOwned(item.id));
-    if (ownedOutfits.length && Math.random() < 0.25) {
-      const outfit = weightedChoice(ownedOutfits, item => RARITY[item.rarity]?.weight || 1);
-      return {
-        source: 'shop',
-        name: outfit.name,
-        details: outfit.details || '',
-        rarity: outfit.rarity,
-        rarityLabel: RARITY[outfit.rarity]?.label || 'Shop'
-      };
-    }
-
-    const template = choice(TEMPLATES);
-    const matching = Math.random() < 0.30;
-    const items = matching ? rollMatchingOutfit(template) : rollMixedOutfit(template);
-    return { source: 'random', template: template.name, matching, items };
+    const ownedOutfits = unlockedOutfits();
+    const outfit = weightedChoice(ownedOutfits, item => RARITY[item.rarity]?.weight || 1) || ownedOutfits[0] || OUTFIT_LIBRARY[0];
+    return {
+      source: 'library',
+      id: outfit.id,
+      number: outfit.number,
+      name: outfit.name,
+      details: outfit.details || '',
+      pieces: String(outfit.details || '').split(',').map(x => x.trim()).filter(Boolean),
+      rarity: outfit.rarity,
+      rarityLabel: RARITY[outfit.rarity]?.label || 'Outfit'
+    };
   }
 
-  function rollMixedOutfit(template) {
-    return template.slots.flatMap(category => {
-      const colors = state.wardrobe[category] || [];
-      if (!colors.length) return [];
-      return [`${choice(colors)} ${category.toLowerCase()}`];
-    });
-  }
-
-  function rollMatchingOutfit(template) {
-    const possibleThemeColors = Array.from(new Set(template.slots.flatMap(category => state.wardrobe[category] || [])));
-    if (!possibleThemeColors.length) return [];
-    const main = choice(possibleThemeColors);
-    return template.slots.flatMap(category => {
-      const colors = state.wardrobe[category] || [];
-      if (!colors.length) return [];
-      const color = colors.includes(main) && Math.random() < 0.78 ? main : choice(colors);
-      return [`${color} ${category.toLowerCase()}`];
-    });
-  }
 
   function activeRollEffect() {
     const ownedEffects = SHOP_ITEMS.filter(item => item.kind === 'effect' && isOwned(item.id));
@@ -1592,63 +3171,74 @@ h3 { margin-bottom: 8px; }
     state.stats.taskExhysEarned = Math.round((Number(state.stats.taskExhysEarned || 0) + roll.totalReward) * 10) / 10;
     state.stats.highestRollReward = Math.max(Number(state.stats.highestRollReward || 0), roll.totalReward);
     state.stats.highestDareReward = Math.max(Number(state.stats.highestDareReward || 0), ...roll.dares.map(d => Number(d.reward || 0)));
+    if (roll.outfit.source === 'library') state.stats.outfitLibraryCompletions += 1;
     if (roll.outfit.source === 'shop') state.stats.shopOutfitCompletions += 1;
     if (roll.outfit.source === 'random') state.stats.randomOutfitCompletions += 1;
     if (roll.outfit.source === 'random' && roll.outfit.matching) state.stats.matchingOutfitCompletions += 1;
     if (roll.outfit.source === 'random' && !roll.outfit.matching) state.stats.mixedOutfitCompletions += 1;
 
+    const rankMessages = addRankXp(15 * roll.dares.length, 'Main roll completed');
     const milestoneMessages = checkHiddenMilestones();
     render();
     animateExhysBalance(oldExhys, newExhys);
-    queueToasts([`Claimed ${formatNum(roll.totalReward)} Exhys.`, ...milestoneMessages]);
+    queueToasts([`Claimed ${formatNum(roll.totalReward)} Exhys.`, ...rankMessages, ...milestoneMessages]);
   }
 
   function renderWardrobe() {
+    const counts = ['common','rare','epic','legendary'].map(rarity => ({
+      rarity,
+      owned: OUTFIT_LIBRARY.filter(item => item.rarity === rarity && isOwned(item.id)).length,
+      total: OUTFIT_LIBRARY.filter(item => item.rarity === rarity).length
+    }));
     views.wardrobe.innerHTML = `
       <section class="card">
         <div class="card-title-row">
           <div>
-            <h2>Wardrobe Colors</h2>
-            <p class="muted">Categories are hard-coded. Check the colors you want each category to roll. If a category has no colors, it is skipped.</p>
+            <h2>Wardrobe Collection</h2>
+            <p class="muted">Your unlocked outfit library. Main rolls and Dress Up training roll from unlocked outfits using rarity weights.</p>
           </div>
-          <button id="resetWardrobeBtn" class="btn ghost small">Reset Colors</button>
+          <span class="badge">${unlockedOutfits().length}/${OUTFIT_LIBRARY.length} unlocked</span>
+        </div>
+        <div class="collection-summary">
+          ${counts.map(row => `<div class="collection-stat"><strong>${row.owned}/${row.total}</strong><span class="muted small">${esc(RARITY[row.rarity].label)}</span></div>`).join('')}
         </div>
       </section>
-      <div class="grid two" style="margin-top:14px">
-        ${CATEGORIES.map(category => renderCategoryCard(category)).join('')}
+      <div class="grid three" style="margin-top:14px">
+        ${OUTFIT_LIBRARY.map(renderOutfitCollectionCard).join('')}
       </div>
     `;
-
-    document.getElementById('resetWardrobeBtn')?.addEventListener('click', () => {
-      if (!confirm('Reset all wardrobe colors to defaults?')) return;
-      CATEGORIES.forEach(cat => { state.wardrobe[cat] = defaultColorsFor(cat); });
-      render();
-    });
-
-    document.querySelectorAll('[data-color-toggle]').forEach(input => {
-      input.addEventListener('change', e => {
-        const category = e.target.dataset.category;
-        const color = e.target.dataset.color;
-        const set = new Set(state.wardrobe[category] || []);
-        if (e.target.checked) set.add(color); else set.delete(color);
-        state.wardrobe[category] = [...set];
-        saveState();
-      });
-    });
-
-    document.querySelectorAll('[data-select-all]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.wardrobe[btn.dataset.selectAll] = COLORS.map(c => c.name);
-        render();
-      });
-    });
-    document.querySelectorAll('[data-clear-all]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.wardrobe[btn.dataset.clearAll] = [];
-        render();
-      });
-    });
   }
+
+  function outfitUnlockLabel(outfit) {
+    if (outfit.unlock === 'start') return 'Starting outfit';
+    if (outfit.unlock === 'shop') return 'Shop';
+    if (outfit.unlock === 'milestone') return 'Hidden milestone';
+    if (outfit.unlock === 'rank') return `Sissy Rank ${outfit.rankLevel}`;
+    return 'Locked';
+  }
+
+  function renderOutfitCollectionCard(outfit) {
+    const owned = isOwned(outfit.id);
+    const rarity = RARITY[outfit.rarity] || RARITY.common;
+    const hiddenMilestone = outfit.unlock === 'milestone' && !owned;
+    const title = hiddenMilestone ? 'Hidden Milestone Outfit' : outfit.name;
+    const details = hiddenMilestone ? 'Complete hidden milestones to reveal this outfit.' : outfit.details;
+    const pieces = String(details || '').split(',').map(x => x.trim()).filter(Boolean);
+    return `
+      <section class="card compact shop-item outfit-card rarity-${esc(outfit.rarity)} ${owned ? '' : 'locked'}">
+        <div class="card-title-row">
+          <div>
+            <h3>${esc(outfit.number)}. ${esc(title)}</h3>
+            <span class="badge ${esc(outfit.rarity)}">${esc(rarity.label)} · weight ${rarity.weight}</span>
+          </div>
+          <span class="badge">${owned ? 'Unlocked' : 'Locked'}</span>
+        </div>
+        <p class="muted small">Unlock source: ${esc(outfitUnlockLabel(outfit))}</p>
+        <div class="pieces">${pieces.map(piece => `<span>• ${esc(piece)}</span>`).join('')}</div>
+      </section>
+    `;
+  }
+
 
   function wardrobeOptionsFor(category) {
     return category === 'Wig' ? WIG_OPTIONS : COLORS;
@@ -1739,6 +3329,8 @@ h3 { margin-bottom: 8px; }
   function renderTrainingUpgrade(upgrade) {
     const level = Number(state.training.upgrades[upgrade.id] || 0);
     const cost = trainingUpgradeCost(upgrade.id);
+    const fullCost = trainingUpgradeFullCost(upgrade.id);
+    const discount = state.trainingUpgradeDiscounts?.[upgrade.id];
     return `
       <div class="upgrade-box">
         <div class="card-title-row">
@@ -1746,10 +3338,10 @@ h3 { margin-bottom: 8px; }
             <h3>${esc(upgrade.name)}</h3>
             <p class="muted small">${esc(upgrade.description)}</p>
           </div>
-          <span class="badge">Lv ${level}</span>
+          <span class="badge">Lv ${level}</span>${discount ? `<span class="badge discount-badge">${Math.round(Number(discount.percent || 0) * 100)}% off</span>` : ''}
         </div>
         <footer>
-          <span class="price obedience-price">${formatNum(cost)} Obedience</span>
+          <span class="price obedience-price">${formatNum(cost)} Obedience${discount ? ` <small class="muted"><s>${formatNum(fullCost)}</s></small>` : ''}</span>
           <button class="btn primary small" data-training-upgrade="${esc(upgrade.id)}" ${state.obedience >= cost ? '' : 'disabled'}>Upgrade</button>
         </footer>
       </div>
@@ -1764,7 +3356,7 @@ h3 { margin-bottom: 8px; }
     const specialNote = category === 'Chastity'
       ? '<p class="muted small">Unique timer system. Rolls a duration from 1h to 12h and pays only after “May I unlock now?” says yes.</p>'
       : category === 'Dress Up'
-        ? '<p class="muted small">Rolls from your Wardrobe colors and unlocked shop outfits instead of a separate task list.</p>'
+        ? '<p class="muted small">Rolls from your unlocked Wardrobe outfit collection instead of a separate task list.</p>'
         : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
     return `
       <section class="card compact training-category">
@@ -1871,6 +3463,15 @@ h3 { margin-bottom: 8px; }
   function trainingUpgradeCost(id) {
     const upgrade = TRAINING_UPGRADES.find(item => item.id === id);
     const level = Number(state.training.upgrades[id] || 0);
+    const base = Math.ceil((upgrade?.baseCost || 1000) * Math.pow(1.3, level));
+    const discount = state.trainingUpgradeDiscounts?.[id];
+    if (discount) return Math.ceil(base * (1 - Number(discount.percent || 0)));
+    return base;
+  }
+
+  function trainingUpgradeFullCost(id) {
+    const upgrade = TRAINING_UPGRADES.find(item => item.id === id);
+    const level = Number(state.training.upgrades[id] || 0);
     return Math.ceil((upgrade?.baseCost || 1000) * Math.pow(1.3, level));
   }
 
@@ -1945,9 +3546,7 @@ h3 { margin-bottom: 8px; }
 
   function createDressUpTrainingOffer() {
     const outfit = rollOutfit();
-    let outfitText = '';
-    if (outfit.source === 'shop') outfitText = `${outfit.name}${outfit.details ? ` — ${outfit.details}` : ''}`;
-    else outfitText = outfit.items.join(', ') || 'a wardrobe outfit';
+    const outfitText = `${outfit.name}${outfit.details ? ` — ${outfit.details}` : ''}`;
     const minutes = 10 + Math.floor(Math.random() * 81);
     const baseReward = rollTrainingBaseReward();
     return {
@@ -2019,9 +3618,11 @@ h3 { margin-bottom: 8px; }
       stats.luckBonusesTriggered += luck.chunks;
       stats.luckBonusObedience += luck.bonus;
     }
+    const xpAmount = category === 'Chastity' ? Math.max(1, Math.floor(Number(active.durationMinutes || 0) / 60)) : 5;
+    const rankMessages = addRankXp(xpAmount, `${category} training completed`);
     const milestoneMessages = checkTrainingMilestones();
     render();
-    queueToasts([`Training complete: +${formatNum(finalReward)} Obedience${luck.bonus ? ` (${formatNum(luck.bonus)} from luck)` : ''}.`, ...milestoneMessages]);
+    queueToasts([`Training complete: +${formatNum(finalReward)} Obedience${luck.bonus ? ` (${formatNum(luck.bonus)} from luck)` : ''}.`, ...rankMessages, ...milestoneMessages]);
   }
 
   function trainingLuckBonus() {
@@ -2134,11 +3735,171 @@ h3 { margin-bottom: 8px; }
     if (!upgrade) return;
     if (state.obedience < cost) { toast(`Not enough Obedience. Need ${formatNum(cost)}.`); return; }
     state.obedience = Math.round((Number(state.obedience || 0) - cost) * 10) / 10;
+    if (state.trainingUpgradeDiscounts?.[id]) delete state.trainingUpgradeDiscounts[id];
     state.training.upgrades[id] = Number(state.training.upgrades[id] || 0) + 1;
     state.training.stats.upgradesBought += 1;
+    const rankMessages = addRankXp(10, 'Training upgrade bought');
     const milestoneMessages = checkTrainingMilestones();
     render();
-    queueToasts([`${upgrade.name} upgraded.`, ...milestoneMessages]);
+    queueToasts([`${upgrade.name} upgraded.`, ...rankMessages, ...milestoneMessages]);
+  }
+
+
+  function xpToNextRank(rank = state.sissyRank?.rank || 0) {
+    if (Number(rank) >= 50) return 0;
+    return Math.ceil(100 * Math.pow(1.0675, Number(rank || 0)));
+  }
+
+  function rankTitle(rank = state.sissyRank?.rank || 0) {
+    rank = Number(rank || 0);
+    if (rank >= 50) return 'Publicly Exposed Sissy Showtoy';
+    if (rank >= 45) return 'Exposed Sissy Slut';
+    if (rank >= 40) return 'Public Showpiece';
+    if (rank >= 35) return 'Displayed Whore';
+    if (rank >= 30) return 'Shameless Toy';
+    if (rank >= 25) return 'Slutty Plaything';
+    if (rank >= 20) return 'Trained Pet';
+    if (rank >= 15) return 'Obedient Sissy';
+    if (rank >= 10) return 'Shy Doll';
+    if (rank >= 5) return 'Panty Trainee';
+    return 'Blushing Beginner';
+  }
+
+  function addRankXp(amount, reason = '') {
+    amount = Math.max(0, Number(amount || 0));
+    if (!amount || state.sissyRank.rank >= 50) return [];
+    const messages = [`+${formatNum(amount)} Sissy XP${reason ? ` — ${reason}` : ''}.`];
+    state.sissyRank.xp += amount;
+    state.sissyRank.totalXp += amount;
+    while (state.sissyRank.rank < 50) {
+      const needed = xpToNextRank(state.sissyRank.rank);
+      if (state.sissyRank.xp < needed) break;
+      state.sissyRank.xp -= needed;
+      state.sissyRank.rank += 1;
+      messages.push(`Sissy Rank Up: Rank ${state.sissyRank.rank} — ${rankTitle(state.sissyRank.rank)}.`);
+      messages.push(...applyRankReward(state.sissyRank.rank));
+    }
+    if (state.sissyRank.rank >= 50) state.sissyRank.xp = 0;
+    return messages;
+  }
+
+  function applyRankReward(rank) {
+    const reward = RANK_REWARDS.find(item => item.rank === rank);
+    if (!reward) return [];
+    if (!state.sissyRank.rewardsClaimed.includes(rank)) state.sissyRank.rewardsClaimed.push(rank);
+    const messages = [];
+    reward.rewards.forEach(action => {
+      if (action.type === 'exhys') {
+        state.exhys = Math.round((Number(state.exhys || 0) + Number(action.amount || 0)) * 10) / 10;
+        messages.push(`Rank reward: +${formatNum(action.amount)} Exhys.`);
+      }
+      if (action.type === 'obedience') {
+        state.obedience = Math.round((Number(state.obedience || 0) + Number(action.amount || 0)) * 10) / 10;
+        messages.push(`Rank reward: +${formatNum(action.amount)} Obedience.`);
+      }
+      if (action.type === 'outfit') {
+        const outfitName = unlockOutfit(action.outfitId);
+        messages.push(`Rank reward: outfit unlocked — ${outfitName}.`);
+      }
+      if (action.type === 'priceFreeze') {
+        state.priceFreezes = Number(state.priceFreezes || 0) + Number(action.count || 1);
+        state.stats.priceFreezesReceived += Number(action.count || 1);
+        messages.push('Rank reward: Price Freeze added.');
+      }
+      if (action.type === 'shopDiscount') {
+        const text = applyRandomShopDiscount(Number(action.percent || 0.25));
+        messages.push(`Rank reward: ${text}`);
+      }
+      if (action.type === 'trainingDiscount') {
+        const text = applyRandomTrainingDiscount(Number(action.percent || 0.25));
+        messages.push(`Rank reward: ${text}`);
+      }
+    });
+    return messages;
+  }
+
+  function applyRandomShopDiscount(percent) {
+    const targets = SHOP_ITEMS.filter(item => !isOwned(item.id) && itemBasePrice(item) > 0 && !state.discounts?.[item.id]);
+    const fallback = SHOP_ITEMS.filter(item => !isOwned(item.id) && itemBasePrice(item) > 0);
+    const target = choice(targets.length ? targets : fallback);
+    if (!target) return 'no locked shop item was available for discount.';
+    state.discounts[target.id] = { percent, createdAt: new Date().toISOString() };
+    state.stats.secretDiscountsReceived += 1;
+    return `${Math.round(percent * 100)}% discount applied to ${target.name}.`;
+  }
+
+  function applyRandomTrainingDiscount(percent) {
+    state.trainingUpgradeDiscounts = state.trainingUpgradeDiscounts || {};
+    const targets = TRAINING_UPGRADES.filter(upgrade => !state.trainingUpgradeDiscounts[upgrade.id]);
+    const target = choice(targets.length ? targets : TRAINING_UPGRADES);
+    if (!target) return 'no Training upgrade was available for discount.';
+    state.trainingUpgradeDiscounts[target.id] = { percent, createdAt: new Date().toISOString() };
+    return `${Math.round(percent * 100)}% discount applied to ${target.name}.`;
+  }
+
+  function renderRank() {
+    const rank = state.sissyRank || createDefaultSissyRankState();
+    const need = xpToNextRank(rank.rank);
+    const pct = rank.rank >= 50 ? 100 : Math.min(100, (Number(rank.xp || 0) / Math.max(1, need)) * 100);
+    const nextReward = RANK_REWARDS.find(item => item.rank === Math.min(50, rank.rank + 1));
+    views.rank.innerHTML = `
+      <section class="card rank-hero">
+        <div class="card-title-row">
+          <div>
+            <h2>Sissy Rank</h2>
+            <p class="muted">Battle-pass progression. Every rank gives a visible reward.</p>
+          </div>
+          <span class="badge">Rank ${rank.rank}/50</span>
+        </div>
+        <div class="training-summary">
+          <div class="training-stat"><strong>${rank.rank}</strong><span class="muted small">Current rank</span></div>
+          <div class="training-stat"><strong>${esc(rankTitle(rank.rank))}</strong><span class="muted small">Current title</span></div>
+          <div class="training-stat"><strong>${formatNum(rank.totalXp || 0)}</strong><span class="muted small">Total Sissy XP</span></div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="rank-progress"><span style="width:${pct}%"></span></div>
+          <p class="small muted">${rank.rank >= 50 ? 'Maximum rank reached.' : `${formatNum(rank.xp)} / ${formatNum(need)} XP to Rank ${rank.rank + 1}. Next reward: ${esc(nextReward?.label || 'Reward')}`}</p>
+        </div>
+      </section>
+      <section class="card" style="margin-top:14px">
+        <div class="card-title-row">
+          <div>
+            <h2>Reward Track</h2>
+            <p class="muted">Claimed automatically on rank-up.</p>
+          </div>
+          <span class="badge">Visible rewards</span>
+        </div>
+        <div class="rank-track">${RANK_REWARDS.map(renderRankNode).join('')}</div>
+      </section>
+    `;
+  }
+
+  function renderRankNode(entry) {
+    const current = state.sissyRank.rank === entry.rank;
+    const claimed = state.sissyRank.rank >= entry.rank;
+    return `
+      <div class="rank-node ${claimed ? 'claimed' : ''} ${current ? 'current' : ''}">
+        <div class="rank-number">Rank ${entry.rank}</div>
+        <div>
+          <strong>${esc(rankTitle(entry.rank))}</strong>
+          <div class="rank-reward-list">${entry.rewards.map(renderRankRewardBadge).join('')}</div>
+        </div>
+        <span class="badge">${claimed ? 'Claimed' : 'Locked'}</span>
+      </div>
+    `;
+  }
+
+  function renderRankRewardBadge(action) {
+    if (action.type === 'exhys') return `<span class="badge">+${formatNum(action.amount)} Exhys</span>`;
+    if (action.type === 'obedience') return `<span class="badge">+${formatNum(action.amount)} Obedience</span>`;
+    if (action.type === 'priceFreeze') return `<span class="badge freeze-badge">Price Freeze</span>`;
+    if (action.type === 'shopDiscount') return `<span class="badge discount-badge">${Math.round(action.percent * 100)}% Shop Discount</span>`;
+    if (action.type === 'trainingDiscount') return `<span class="badge discount-badge">${Math.round(action.percent * 100)}% Training Discount</span>`;
+    if (action.type === 'outfit') {
+      const outfit = findOutfit(action.outfitId);
+      return `<span class="badge ${esc(outfit?.rarity || '')}">Outfit: ${esc(outfit?.name || 'Outfit')}</span>`;
+    }
+    return `<span class="badge">Reward</span>`;
   }
 
   function renderLists() {
@@ -2179,7 +3940,7 @@ h3 { margin-bottom: 8px; }
         <div class="card-title-row">
           <div>
             <h2>Backup &amp; Progress Reset</h2>
-            <p class="muted">Export/import local data. Reset Progress clears Exhys, purchases, shop inflation, discounts, milestones, and current roll, but keeps wardrobe colors, locations, and dares.</p>
+            <p class="muted">Export/import local data. Reset Progress clears Exhys, purchases, rank, shop inflation, discounts, milestones, and current roll, but keeps locations, dares, and training task lists.</p>
           </div>
           <div class="roll-controls">
             <button class="btn" id="exportBtn">Export JSON</button>
@@ -2241,11 +4002,12 @@ h3 { margin-bottom: 8px; }
         <div class="card-title-row">
           <div>
             <h2>Shop</h2>
-            <p class="muted">Buy cosmetics, roll effects, and full outfits with Exhys. Every purchase raises all future prices by 10% compounded unless Price Freeze is active.</p>
+            <p class="muted">Buy cosmetics, roll effects, and shop outfits with Exhys. Every normal purchase raises future shop prices; the inflation rate starts at +10% and drops by 0.2 percentage points per purchase, capped at +3%.</p>
           </div>
           <div class="grid" style="gap:6px;text-align:right">
             <span class="badge">Inflation steps: ${state.totalPurchases}</span>
-            <span class="badge">Inflation: ×${Math.pow(1.1, state.totalPurchases).toFixed(3)}</span>
+            <span class="badge">Multiplier: ×${Number(state.shopMultiplier || 1).toFixed(3)}</span>
+            <span class="badge">Next increase: +${(currentInflationRate() * 100).toFixed(1)}%</span>
             ${state.priceFreezes ? `<span class="badge freeze-badge">Price Freeze: ${state.priceFreezes}</span>` : ''}
           </div>
         </div>
@@ -2329,7 +4091,7 @@ h3 { margin-bottom: 8px; }
           ${owned ? '<span class="badge">Owned</span>' : ''}
         </div>
         <p class="muted small">${esc(description || '')}</p>
-        ${discount && !owned ? `<p class="small"><span class="badge discount-badge">Secret Discount · 50% off</span></p>` : ''}
+        ${discount && !owned ? `<p class="small"><span class="badge discount-badge">Secret Discount · ${Math.round(Number(discount.percent || 0) * 100)}% off</span></p>` : ''}
         <footer>
           <span class="price">${owned ? 'Purchased' : `${formatNum(price)} Exhys${discount ? ` <small class="muted"><s>${formatNum(fullPrice)}</s></small>` : ''}`}</span>
           ${action}
@@ -2357,12 +4119,20 @@ h3 { margin-bottom: 8px; }
       delete state.discounts[id];
       state.stats.discountsUsed += 1;
     }
+    let inflationText = '';
     if (usedPriceFreeze) {
       state.priceFreezes -= 1;
       state.stats.priceFreezesUsed += 1;
+      inflationText = 'Price Freeze used. Future prices did not increase.';
     } else {
+      const rate = currentInflationRate();
+      state.shopMultiplier = Math.round((Number(state.shopMultiplier || 1) * (1 + rate)) * 1000000) / 1000000;
       state.totalPurchases += 1;
+      inflationText = `Future shop prices increased by ${(rate * 100).toFixed(1)}%.`;
     }
+
+    let rankMessages = [];
+    if (item.kind === 'outfit') rankMessages = addRankXp(20, 'Shop outfit bought');
 
     if (item.kind === 'theme') state.activeTheme = id;
     if (item.kind === 'effect') state.activeEffect = id;
@@ -2371,8 +4141,7 @@ h3 { margin-bottom: 8px; }
     lastShopFlashId = id;
     render();
     setTimeout(() => { lastShopFlashId = null; }, 1100);
-    const inflationText = usedPriceFreeze ? 'Price Freeze used. Future prices did not increase.' : 'Future shop prices increased by 10%.';
-    queueToasts([`Purchased ${item.name}. ${inflationText}`, ...milestoneMessages]);
+    queueToasts([`Purchased ${item.name}. ${inflationText}`, ...rankMessages, ...milestoneMessages]);
   }
 
   function equipTheme(id) {
@@ -2426,7 +4195,7 @@ h3 { margin-bottom: 8px; }
   }
 
   function resetProgressKeepSettings() {
-    if (!confirm('Reset progress? This clears Exhys, purchases, shop prices, discounts, milestones, and current roll, but keeps wardrobe colors, locations, and dares.')) return;
+    if (!confirm('Reset progress? This clears Exhys, purchases, rank, shop prices, discounts, milestones, and current roll, but keeps locations, dares, and training task lists.')) return;
     const keptWardrobe = JSON.parse(JSON.stringify(state.wardrobe || {}));
     const keptLocations = JSON.parse(JSON.stringify(state.locations || []));
     const keptDares = JSON.parse(JSON.stringify(state.dares || []));
@@ -2442,7 +4211,11 @@ h3 { margin-bottom: 8px; }
       locations: keptLocations,
       dares: keptDares,
       dareCount: keptDareCount,
-      training: { ...createDefaultTrainingState(), categories: { ...createDefaultTrainingState().categories, ...keptTrainingTasks } }
+      training: { ...createDefaultTrainingState(), categories: { ...createDefaultTrainingState().categories, ...keptTrainingTasks } },
+      purchased: ['theme-neon', 'effect-basic', ...STARTING_OUTFIT_IDS],
+      shopMultiplier: 1,
+      sissyRank: createDefaultSissyRankState(),
+      trainingUpgradeDiscounts: {}
     });
     activeView = 'home';
     activeShopTab = 'themes';
