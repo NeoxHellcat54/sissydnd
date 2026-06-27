@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15061f" />
   <meta name="description" content="Dressed & Dared - a neon outfit, location, and dare randomizer." />
   <title>Dressed & Dared</title>
-  <!-- v13.6 singlefile build: Pain + Grindr training categories; upload index.html, 404.html, and .nojekyll only -->
+  <!-- v13.8 singlefile build: Pain roll centered around 70; upload index.html, 404.html, and .nojekyll only -->
   <style>
 :root {
   --bg-0: #050309;
@@ -648,7 +648,7 @@ h3 { margin-bottom: 8px; }
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Neon Dressing Room · v13.6</p>
+        <p class="eyebrow">Neon Dressing Room · v13.8</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
       <div class="top-wallets">
@@ -3718,7 +3718,25 @@ h3 { margin-bottom: 8px; }
   }
 
   function rollPainAmount() {
-    return 1 + Math.floor(499 * Math.pow(Math.random(), 6.25));
+    // Weighted around 70, not merely averaging 70.
+    // The peak is around 70, low single-digits are rare,
+    // and the right-side tail keeps larger 1-500 rolls possible.
+    const weights = [];
+    let total = 0;
+    for (let n = 1; n <= 500; n++) {
+      const peak = Math.exp(-0.5 * Math.pow((n - 70) / 28, 2));
+      const tail = n > 70 ? 0.015 * Math.exp(-(n - 70) / 130) : 0;
+      const weight = peak + tail;
+      weights.push(weight);
+      total += weight;
+    }
+
+    let roll = Math.random() * total;
+    for (let i = 0; i < weights.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return i + 1;
+    }
+    return 70;
   }
 
   function createGrindrTrainingOffer() {
