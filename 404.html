@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15061f" />
   <meta name="description" content="Dressed & Dared - a neon outfit, location, and dare randomizer." />
   <title>Dressed & Dared</title>
-  <!-- v13.5 singlefile build: training input focus hotfix; upload index.html, 404.html, and .nojekyll only -->
+  <!-- v13.6 singlefile build: Pain + Grindr training categories; upload index.html, 404.html, and .nojekyll only -->
   <style>
 :root {
   --bg-0: #050309;
@@ -648,7 +648,7 @@ h3 { margin-bottom: 8px; }
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Neon Dressing Room · v13.5</p>
+        <p class="eyebrow">Neon Dressing Room · v13.6</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
       <div class="top-wallets">
@@ -1717,7 +1717,7 @@ h3 { margin-bottom: 8px; }
     'Count to 100 before leaving.'
   ];
 
-  const TRAINING_CATEGORIES = ['Chastity', 'Anal', 'Oral', 'Bondage', 'Dress Up', 'Chores', 'Exposure'];
+  const TRAINING_CATEGORIES = ['Chastity', 'Anal', 'Oral', 'Bondage', 'Dress Up', 'Chores', 'Exposure', 'Pain', 'Grindr'];
   const USER_TASK_TRAINING_CATEGORIES = ['Anal', 'Oral', 'Bondage', 'Chores', 'Exposure'];
 
   const TRAINING_UPGRADES = [
@@ -2410,7 +2410,9 @@ h3 { margin-bottom: 8px; }
       bondageCompleted: 0,
       dressUpCompleted: 0,
       choresCompleted: 0,
-      exposureCompleted: 0
+      exposureCompleted: 0,
+      painCompleted: 0,
+      grindrCompleted: 0
     };
   }
 
@@ -2886,7 +2888,7 @@ h3 { margin-bottom: 8px; }
       return USER_TASK_TRAINING_CATEGORIES.filter(category => (training.categories?.[category]?.tasks || []).some(task => task.enabled && task.text.trim())).length;
     }
     if (stat === 'trainingCategoriesCompleted') {
-      return ['Chastity','Anal','Oral','Bondage','Dress Up','Chores','Exposure'].filter(category => Number(stats[categoryStatKey(category)] || 0) > 0).length;
+      return TRAINING_CATEGORIES.filter(category => Number(stats[categoryStatKey(category)] || 0) > 0).length;
     }
     return Number(stats[stat] || 0);
   }
@@ -2961,7 +2963,9 @@ h3 { margin-bottom: 8px; }
       Bondage: 'bondageCompleted',
       'Dress Up': 'dressUpCompleted',
       Chores: 'choresCompleted',
-      Exposure: 'exposureCompleted'
+      Exposure: 'exposureCompleted',
+      Pain: 'painCompleted',
+      Grindr: 'grindrCompleted'
     }[category] || 'tasksCompleted';
   }
 
@@ -3397,6 +3401,20 @@ h3 { margin-bottom: 8px; }
     document.querySelectorAll('[data-reroll-training]').forEach(btn => btn.addEventListener('click', () => rerollTrainingOffer(btn.dataset.rerollTraining)));
     document.querySelectorAll('[data-accept-training]').forEach(btn => btn.addEventListener('click', () => acceptTrainingOffer(btn.dataset.acceptTraining)));
     document.querySelectorAll('[data-complete-training]').forEach(btn => btn.addEventListener('click', () => completeTrainingTask(btn.dataset.completeTraining)));
+    document.querySelectorAll('[data-pain-add]').forEach(btn => btn.addEventListener('click', () => updatePainDone(Number(btn.dataset.painAdd || 0))));
+    document.querySelectorAll('[data-pain-set-done]').forEach(btn => btn.addEventListener('click', () => {
+      const input = document.querySelector('[data-pain-done-input]');
+      setPainDone(Number(input?.value || 0));
+    }));
+    document.querySelectorAll('[data-pain-done-input]').forEach(input => {
+      input.addEventListener('change', () => setPainDone(Number(input.value || 0)));
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          setPainDone(Number(input.value || 0));
+        }
+      });
+    });
     document.querySelectorAll('[data-cancel-training]').forEach(btn => btn.addEventListener('click', () => cancelTrainingTask(btn.dataset.cancelTraining)));
     document.querySelectorAll('[data-chastity-locked]').forEach(btn => btn.addEventListener('click', () => startChastityTimer()));
     document.querySelectorAll('[data-chastity-unlock]').forEach(btn => btn.addEventListener('click', () => askChastityUnlock()));
@@ -3443,7 +3461,11 @@ h3 { margin-bottom: 8px; }
       ? '<p class="muted small">Unique timer system. Rolls a duration from 1h to 12h and pays only after “May I unlock now?” says yes.</p>'
       : category === 'Dress Up'
         ? '<p class="muted small">Rolls from your unlocked Wardrobe outfit collection instead of a separate task list.</p>'
-        : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
+        : category === 'Pain'
+          ? '<p class="muted small">Special counter category. Rolls Spanks or CBT with a fixed target from 1 to 500, weighted toward lower amounts.</p>'
+          : category === 'Grindr'
+            ? '<p class="muted small">Special quick-complete category. Rolls an age range weighted toward 25 and an action, with boosted Obedience rewards.</p>'
+            : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
     return `
       <section class="card compact training-category">
         <div class="card-title-row">
@@ -3489,6 +3511,7 @@ h3 { margin-bottom: 8px; }
 
   function renderActiveTrainingTask(category, active) {
     if (category === 'Chastity') return renderActiveChastity(active);
+    if (category === 'Pain') return renderActivePain(active);
     return `
       <div class="active-task-box">
         <h3>Active Task</h3>
@@ -3499,6 +3522,37 @@ h3 { margin-bottom: 8px; }
           <button class="btn primary small" data-complete-training="${esc(category)}">Complete Task</button>
           <button class="btn ghost small" data-cancel-training="${esc(category)}">Cancel</button>
         </div>
+      </div>
+    `;
+  }
+
+  function renderActivePain(active) {
+    const target = Math.max(1, Number(active.target || active.amount || 1));
+    const done = Math.max(0, Math.min(target, Number(active.done || 0)));
+    const remaining = Math.max(0, target - done);
+    const pct = Math.min(100, Math.round((done / Math.max(1, target)) * 100));
+    return `
+      <div class="active-task-box">
+        <h3>Active Pain Counter</h3>
+        <p class="training-task-display">${esc(active.kind || 'Pain')} × ${formatNum(target)}</p>
+        <div class="training-summary">
+          <div class="training-stat"><strong>${formatNum(done)}</strong><span class="muted small">Done</span></div>
+          <div class="training-stat"><strong>${formatNum(remaining)}</strong><span class="muted small">Remaining</span></div>
+          <div class="training-stat"><strong>${formatNum(target)}</strong><span class="muted small">Target</span></div>
+        </div>
+        <div class="rank-progress" style="margin-top:10px"><span style="width:${pct}%"></span></div>
+        <p class="price obedience-price">${currencyIcon('obedience')}Reward on completion: ${formatNum(active.reward)} Obedience</p>
+        <div class="roll-controls">
+          <button class="btn small" data-pain-add="1">+1 done</button>
+          <button class="btn small" data-pain-add="5">+5 done</button>
+          <button class="btn small" data-pain-add="10">+10 done</button>
+        </div>
+        <div class="training-add-row" style="margin-top:10px">
+          <input type="number" min="0" max="${target}" value="${done}" data-pain-done-input="1" placeholder="Set done amount">
+          <button class="btn primary small" data-pain-set-done="1">Update</button>
+        </div>
+        <p class="small muted">When done reaches the fixed target, the reward is paid automatically.</p>
+        <div class="roll-controls"><button class="btn ghost small" data-cancel-training="Pain">Cancel</button></div>
       </div>
     `;
   }
@@ -3626,6 +3680,8 @@ h3 { margin-bottom: 8px; }
     const base = { id: uid(), category, rerollsUsed: 0, maxRerolls: trainingRerollLimitForNewOffer(), createdAt: new Date().toISOString() };
     if (category === 'Chastity') return { ...base, ...createChastityOffer() };
     if (category === 'Dress Up') return { ...base, ...createDressUpTrainingOffer() };
+    if (category === 'Pain') return { ...base, ...createPainTrainingOffer() };
+    if (category === 'Grindr') return { ...base, ...createGrindrTrainingOffer() };
     const tasks = enabled(state.training.categories[category]?.tasks || []);
     if (!tasks.length) { toast(`Add at least one enabled ${category} task first.`); return null; }
     const task = choice(tasks);
@@ -3644,6 +3700,58 @@ h3 { margin-bottom: 8px; }
       reward: applyTrainingMultiplier(baseReward),
       outfit
     };
+  }
+
+  function createPainTrainingOffer() {
+    const kind = Math.random() < 0.5 ? 'Spanks' : 'CBT';
+    const target = rollPainAmount();
+    const amountBonus = Math.ceil(target * 4);
+    const baseReward = Math.min(5000, rollTrainingBaseReward() + amountBonus);
+    return {
+      taskText: `${kind} × ${target}`,
+      kind,
+      target,
+      done: 0,
+      baseReward,
+      reward: applyTrainingMultiplier(baseReward)
+    };
+  }
+
+  function rollPainAmount() {
+    return 1 + Math.floor(499 * Math.pow(Math.random(), 6.25));
+  }
+
+  function createGrindrTrainingOffer() {
+    const range = rollGrindrAgeRange();
+    const action = rollGrindrAction();
+    const baseReward = Math.max(1, Math.ceil(rollTrainingBaseReward() * 2.25));
+    return {
+      taskText: `${range.label} — ${action}`,
+      ageStart: range.start,
+      ageEnd: range.end,
+      action,
+      baseReward,
+      reward: applyTrainingMultiplier(baseReward)
+    };
+  }
+
+  function rollGrindrAgeRange() {
+    const choices = [];
+    for (let start = 18; start <= 56; start += 1) {
+      const end = start + 4;
+      const midpoint = start + 2;
+      const distance = Math.abs(midpoint - 25);
+      const weight = Math.exp(-distance / 8);
+      choices.push({ start, end, label: `${start}–${end}`, weight });
+    }
+    return weightedChoice(choices, item => item.weight);
+  }
+
+  function rollGrindrAction() {
+    const r = Math.random();
+    if (r < 0.40) return 'Anal';
+    if (r < 0.80) return 'Oral';
+    return 'Free';
   }
 
   function createChastityOffer() {
@@ -3672,6 +3780,7 @@ h3 { margin-bottom: 8px; }
     if (!offer) return;
     data.offer = null;
     data.active = { ...offer, acceptedAt: new Date().toISOString(), status: category === 'Chastity' ? 'accepted' : 'active' };
+    if (category === 'Pain') data.active.done = Number(data.active.done || 0);
     state.training.stats.offersAccepted += 1;
     if (autoAccepted) state.training.stats.autoAcceptedOffers += 1;
     const milestoneMessages = checkTrainingMilestones();
@@ -3683,6 +3792,11 @@ h3 { margin-bottom: 8px; }
     const data = state.training.categories[category];
     const active = data.active;
     if (!active || category === 'Chastity') return;
+    if (category === 'Pain') {
+      if (Number(active.done || 0) >= Number(active.target || active.amount || 1)) payTrainingReward(category, active);
+      else toast('Pain counter is not complete yet.');
+      return;
+    }
     payTrainingReward(category, active);
   }
 
@@ -3782,6 +3896,34 @@ h3 { margin-bottom: 8px; }
     if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
     if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`;
     return `${s}s`;
+  }
+
+  function updatePainDone(delta) {
+    const active = state.training?.categories?.Pain?.active;
+    if (!active) return;
+    const target = Math.max(1, Number(active.target || active.amount || 1));
+    const next = Math.max(0, Math.min(target, Number(active.done || 0) + Number(delta || 0)));
+    active.done = next;
+    if (next >= target) {
+      payTrainingReward('Pain', active);
+      return;
+    }
+    saveState();
+    render();
+  }
+
+  function setPainDone(value) {
+    const active = state.training?.categories?.Pain?.active;
+    if (!active) return;
+    const target = Math.max(1, Number(active.target || active.amount || 1));
+    const next = Math.max(0, Math.min(target, Math.floor(Number(value || 0))));
+    active.done = next;
+    if (next >= target) {
+      payTrainingReward('Pain', active);
+      return;
+    }
+    saveState();
+    render();
   }
 
   function addTrainingTask(category) {
