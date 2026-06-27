@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15061f" />
   <meta name="description" content="Dressed & Dared - a neon outfit, location, and dare randomizer." />
   <title>Dressed & Dared</title>
-  <!-- v13.4 singlefile build: underwear outfit patch; upload index.html, 404.html, and .nojekyll only -->
+  <!-- v13.5 singlefile build: training input focus hotfix; upload index.html, 404.html, and .nojekyll only -->
   <style>
 :root {
   --bg-0: #050309;
@@ -648,7 +648,7 @@ h3 { margin-bottom: 8px; }
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Neon Dressing Room · v13.4</p>
+        <p class="eyebrow">Neon Dressing Room · v13.5</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
       <div class="top-wallets">
@@ -3510,7 +3510,7 @@ h3 { margin-bottom: 8px; }
     if (status === 'accepted') {
       body = `<p class="muted small">Accepted. Press Locked when the timer has actually started.</p><button class="btn primary small" data-chastity-locked="1">Locked</button>`;
     } else if (status === 'locked') {
-      body = `<div class="timer-display">${formatDuration(remaining)}</div><p class="muted small">Timer is running. It keeps counting down based on real time.</p>`;
+      body = `<div class="timer-display" data-chastity-timer-display="1">${formatDuration(remaining)}</div><p class="muted small">Timer is running. It keeps counting down based on real time.</p>`;
     } else {
       body = `<p class="muted small">Timer finished.</p><button class="btn primary small" data-chastity-unlock="1">May I unlock now?</button>`;
     }
@@ -4376,12 +4376,24 @@ h3 { margin-bottom: 8px; }
     }
   }
 
-  setInterval(() => {
-    if (activeView === 'training') {
-      const active = state.training?.categories?.Chastity?.active;
-      if (active?.status === 'locked') render();
+  function tickTrainingTimers() {
+    const active = state.training?.categories?.Chastity?.active;
+    if (!active || active.status !== 'locked') return;
+    const remaining = chastityRemainingSeconds(active);
+    document.querySelectorAll('[data-chastity-timer-display]').forEach(el => {
+      el.textContent = formatDuration(remaining);
+    });
+    if (remaining <= 0) {
+      active.status = 'awaitingUnlock';
+      active.endTime = null;
+      toast('Chastity timer finished.');
+      render();
+    } else {
+      saveState();
     }
-  }, 1000);
+  }
+
+  setInterval(tickTrainingTimers, 1000);
 
   window.addEventListener('error', event => showFatalError(event.error || event.message));
   window.addEventListener('unhandledrejection', event => showFatalError(event.reason));
