@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15061f" />
   <meta name="description" content="Dressed & Dared - a neon outfit, location, and dare randomizer." />
   <title>Dressed & Dared</title>
-  <!-- v13 currency logo hotfix: currency logo assets kept external for browser stability -->
+  <!-- v13.1 currency logo build: index.html plus assets folder -->
   <style>
 :root {
   --bg-0: #050309;
@@ -172,6 +172,31 @@ h3 { margin-bottom: 8px; }
   background: linear-gradient(135deg, var(--accent), var(--accent-3));
   font-weight: 900;
 }
+.wallet-icon.logo-img {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.25);
+}
+.wallet-icon.logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.currency-mini {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 0.35em;
+  margin-right: 0.32em;
+  vertical-align: -0.18em;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2);
+}
+.currency-mini.exhys { background-image: url('assets/exhys-logo.webp'); }
+.currency-mini.obedience { background-image: url('assets/obedience-logo.webp'); }
 .wallet strong { display: block; line-height: 1; }
 .wallet small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
 
@@ -615,46 +640,6 @@ h3 { margin-bottom: 8px; }
 .discount-line { font-size:.82rem; color:var(--muted); }
 @media (max-width: 720px) { .collection-summary { grid-template-columns: 1fr 1fr; } .rank-node { grid-template-columns: 1fr; } }
 
-/* v13 currency logo icons - external asset references to avoid oversized inline CSS */
-:root {
-  --logo-exhys: url('assets/exhys-logo.webp');
-  --logo-obedience: url('assets/obedience-logo.webp');
-}
-.wallet-icon.currency-logo {
-  position: relative;
-  overflow: hidden;
-  color: transparent;
-  background: rgba(0,0,0,0.28);
-  border: 1px solid rgba(255,255,255,0.16);
-  box-shadow: 0 0 18px rgba(var(--accent-rgb),0.22), inset 0 0 0 1px rgba(255,255,255,0.04);
-  padding: 0;
-}
-.wallet-icon.currency-logo::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  border-radius: inherit;
-}
-.wallet-icon.currency-logo.exhys::before { background-image: var(--logo-exhys); }
-.wallet-icon.currency-logo.obedience::before { background-image: var(--logo-obedience); }
-.currency-inline {
-  display: inline-block;
-  width: 1.18em;
-  height: 1.18em;
-  margin-right: 0.28em;
-  vertical-align: -0.22em;
-  border-radius: 999px;
-  background-size: cover;
-  background-position: center;
-  box-shadow: 0 0 10px rgba(var(--accent-rgb),0.20);
-}
-.currency-inline.exhys { background-image: var(--logo-exhys); }
-.currency-inline.obedience { background-image: var(--logo-obedience); box-shadow: 0 0 10px rgba(255,255,255,0.16); }
-.wallet small.currency-label { display:flex; align-items:center; gap:4px; }
-
-
 @media (max-width: 720px) { .training-summary, .upgrade-grid { grid-template-columns: 1fr; } .top-wallets { width:100%; justify-content:space-between; } .top-wallets .wallet { flex:1; min-width: 0; } }
 
   </style>
@@ -663,19 +648,19 @@ h3 { margin-bottom: 8px; }
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Neon Dressing Room</p>
+        <p class="eyebrow">Neon Dressing Room · v13.1</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
       <div class="top-wallets">
         <div class="wallet" title="Exhys balance">
-          <span class="wallet-icon currency-logo exhys" aria-hidden="true"></span>
+          <span class="wallet-icon logo-img"><img src="assets/exhys-logo.webp" alt="" onerror="this.src='assets/exhys-logo.png'"></span>
           <div>
             <strong id="exhysBalance">0</strong>
             <small>Exhys</small>
           </div>
         </div>
         <div class="wallet obedience-wallet" title="Obedience balance">
-          <span class="wallet-icon currency-logo obedience" aria-hidden="true"></span>
+          <span class="wallet-icon logo-img"><img src="assets/obedience-logo.webp" alt="" onerror="this.src='assets/obedience-logo.png'"></span>
           <div>
             <strong id="obedienceBalance">0</strong>
             <small>Obedience</small>
@@ -2546,10 +2531,9 @@ h3 { margin-bottom: 8px; }
     return num.toFixed(1).replace(/\.0$/, '');
   }
 
-  function currencyIcon(type) {
-    return `<span class="currency-inline ${type === 'obedience' ? 'obedience' : 'exhys'}" aria-hidden="true"></span>`;
+  function currencyIcon(kind) {
+    return `<span class="currency-mini ${kind === 'obedience' ? 'obedience' : 'exhys'}" aria-hidden="true"></span>`;
   }
-
 
   function esc(value) {
     return String(value ?? '')
@@ -2778,7 +2762,7 @@ h3 { margin-bottom: 8px; }
         </div>
         <div style="text-align:right;display:grid;gap:6px;justify-items:end">
           <span class="badge ${esc(entry.size)}">${esc(entry.size)}</span>
-          <span class="price ${entry.currency === 'Obedience' ? 'obedience-price' : ''}">${entry.rewardText ? esc(entry.rewardText) : `${currencyIcon(entry.currency === 'Obedience' ? 'obedience' : 'exhys')}+${formatNum(entry.reward)} ${esc(entry.currency)}`}</span>
+          <span class="price ${entry.currency === 'Obedience' ? 'obedience-price' : ''}">${entry.rewardText ? esc(entry.rewardText) : `${entry.currency === 'Obedience' ? currencyIcon('obedience') : currencyIcon('exhys')}+${formatNum(entry.reward)} ${esc(entry.currency)}`}</span>
         </div>
       </div>
     `).join('')}</div>`;
