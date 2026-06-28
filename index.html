@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15061f" />
   <meta name="description" content="Dressed & Dared - a neon outfit, location, and dare randomizer." />
   <title>Dressed & Dared</title>
-  <!-- v13.8 singlefile build: Pain roll centered around 70; upload index.html, 404.html, and .nojekyll only -->
+  <!-- v14 singlefile build: Hygiene + Category Mastery + Daily Contracts; upload index.html, 404.html, and .nojekyll only -->
   <style>
 :root {
   --bg-0: #050309;
@@ -642,13 +642,25 @@ h3 { margin-bottom: 8px; }
 
 @media (max-width: 720px) { .training-summary, .upgrade-grid { grid-template-columns: 1fr; } .top-wallets { width:100%; justify-content:space-between; } .top-wallets .wallet { flex:1; min-width: 0; } }
 
+
+/* v14 mastery + daily contracts */
+.contract-grid, .mastery-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-top:12px; }
+.contract-card, .mastery-card { border:1px solid var(--border); border-radius:18px; padding:12px; background:rgba(0,0,0,0.18); display:grid; gap:8px; }
+.contract-card.ready { border-color:rgba(121,255,205,0.45); box-shadow:0 0 18px rgba(121,255,205,0.10); }
+.contract-card.claimed { opacity:0.68; border-color:rgba(255,255,255,0.14); }
+.contract-title-row, .mastery-title-row { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+.contract-reward-list, .mastery-bonus-row { display:flex; gap:6px; flex-wrap:wrap; }
+.mastery-card.mastered { border-color:rgba(255,216,90,0.48); box-shadow:0 0 18px rgba(255,216,90,0.12); }
+.mastery-card .rank-progress, .contract-card .rank-progress { height:12px; }
+@media (max-width: 920px) { .contract-grid, .mastery-grid { grid-template-columns:1fr; } }
+
   </style>
 </head>
 <body class="theme-neon">
   <div id="app" class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Neon Dressing Room · v13.8</p>
+        <p class="eyebrow">Neon Dressing Room · v14</p>
         <h1>Dressed <span>&amp;</span> Dared</h1>
       </div>
       <div class="top-wallets">
@@ -1717,8 +1729,8 @@ h3 { margin-bottom: 8px; }
     'Count to 100 before leaving.'
   ];
 
-  const TRAINING_CATEGORIES = ['Chastity', 'Anal', 'Oral', 'Bondage', 'Dress Up', 'Chores', 'Exposure', 'Pain', 'Grindr'];
-  const USER_TASK_TRAINING_CATEGORIES = ['Anal', 'Oral', 'Bondage', 'Chores', 'Exposure'];
+  const TRAINING_CATEGORIES = ['Chastity', 'Anal', 'Oral', 'Bondage', 'Dress Up', 'Chores', 'Hygiene', 'Exposure', 'Pain', 'Grindr'];
+  const USER_TASK_TRAINING_CATEGORIES = ['Anal', 'Oral', 'Bondage', 'Chores', 'Hygiene', 'Exposure'];
 
   const TRAINING_UPGRADES = [
     { id: 'extraRerolls', name: 'Extra Rerolls', baseCost: 2000, description: '+1 free reroll per level. Applies to each category on the next fresh offer cycle.' },
@@ -1728,6 +1740,9 @@ h3 { margin-bottom: 8px; }
   ];
 
   const TRAINING_MILESTONE_REWARDS = { small: 250, medium: 750, big: 1500, major: 3000 };
+  const MAX_MASTERY_LEVEL = 25;
+  const CONTRACT_DIFFICULTIES = ['easy', 'medium', 'hard'];
+
 
   const MAIN_MILESTONE_OUTFIT_REWARDS = {
     m002: 'outfit-007', m006: 'outfit-008', m011: 'outfit-009', m017: 'outfit-010', m024: 'outfit-019',
@@ -2318,7 +2333,7 @@ h3 { margin-bottom: 8px; }
       wardrobe[cat] = defaultColorsFor(cat);
     });
     return {
-      version: 12,
+      version: 14,
       exhys: 0,
       obedience: 0,
       totalPurchases: 0,
@@ -2378,9 +2393,37 @@ h3 { margin-bottom: 8px; }
     return {
       categories,
       upgrades: { extraRerolls: 0, obedienceMultiplier: 0, betterOffers: 0, trainingLuck: 0 },
+      mastery: createDefaultMasteryState(),
+      contracts: createDefaultContractState(),
+      daily: createDefaultDailyTrainingProgress(),
       milestonesUnlocked: [],
       milestoneLog: [],
       stats: createDefaultTrainingStats()
+    };
+  }
+
+  function createDefaultMasteryState() {
+    const mastery = {};
+    TRAINING_CATEGORIES.forEach(category => {
+      mastery[category] = { level: 0, xp: 0, totalXp: 0, mastered: false };
+    });
+    return mastery;
+  }
+
+  function createDefaultContractState() {
+    return { date: '', items: [] };
+  }
+
+  function createDefaultDailyTrainingProgress() {
+    return {
+      date: todayKey(),
+      trainingTasks: 0,
+      trainingByCategory: {},
+      mainRolls: 0,
+      mainDares: 0,
+      maxDaresInRoll: 0,
+      obedienceEarned: 0,
+      sissyXpEarned: 0
     };
   }
 
@@ -2410,9 +2453,12 @@ h3 { margin-bottom: 8px; }
       bondageCompleted: 0,
       dressUpCompleted: 0,
       choresCompleted: 0,
+      hygieneCompleted: 0,
       exposureCompleted: 0,
       painCompleted: 0,
-      grindrCompleted: 0
+      grindrCompleted: 0,
+      masteryLevelsGained: 0,
+      contractsClaimed: 0
     };
   }
 
@@ -2507,12 +2553,55 @@ h3 { margin-bottom: 8px; }
     TRAINING_UPGRADES.forEach(upgrade => {
       merged.upgrades[upgrade.id] = Math.max(0, Number(merged.upgrades[upgrade.id] || 0));
     });
+    merged.mastery = migrateMasteryState(merged.mastery);
+    merged.contracts = migrateContractState(merged.contracts);
+    merged.daily = migrateDailyTrainingProgress(merged.daily);
     merged.milestonesUnlocked = Array.isArray(merged.milestonesUnlocked) ? merged.milestonesUnlocked : [];
     merged.milestoneLog = Array.isArray(merged.milestoneLog) ? merged.milestoneLog : [];
     merged.stats = { ...createDefaultTrainingStats(), ...(merged.stats || {}) };
     if (!Object.prototype.hasOwnProperty.call(merged.stats, 'taskObedienceEarned')) merged.stats.taskObedienceEarned = 0;
     return merged;
   }
+
+
+  function migrateMasteryState(mastery) {
+    const fresh = createDefaultMasteryState();
+    const merged = { ...fresh, ...(mastery || {}) };
+    TRAINING_CATEGORIES.forEach(category => {
+      const current = merged[category] || {};
+      const level = Math.min(MAX_MASTERY_LEVEL, Math.max(0, Number(current.level || 0)));
+      merged[category] = {
+        level,
+        xp: level >= MAX_MASTERY_LEVEL ? 0 : Math.max(0, Number(current.xp || 0)),
+        totalXp: Math.max(0, Number(current.totalXp || 0)),
+        mastered: level >= MAX_MASTERY_LEVEL || Boolean(current.mastered)
+      };
+    });
+    return merged;
+  }
+
+  function migrateContractState(contracts) {
+    const fresh = createDefaultContractState();
+    const merged = { ...fresh, ...(contracts || {}) };
+    merged.date = String(merged.date || '');
+    merged.items = Array.isArray(merged.items) ? merged.items : [];
+    return merged;
+  }
+
+  function migrateDailyTrainingProgress(daily) {
+    const fresh = createDefaultDailyTrainingProgress();
+    const merged = { ...fresh, ...(daily || {}) };
+    merged.date = String(merged.date || todayKey());
+    merged.trainingTasks = Number(merged.trainingTasks || 0);
+    merged.trainingByCategory = merged.trainingByCategory && typeof merged.trainingByCategory === 'object' ? merged.trainingByCategory : {};
+    merged.mainRolls = Number(merged.mainRolls || 0);
+    merged.mainDares = Number(merged.mainDares || 0);
+    merged.maxDaresInRoll = Number(merged.maxDaresInRoll || 0);
+    merged.obedienceEarned = Number(merged.obedienceEarned || 0);
+    merged.sissyXpEarned = Number(merged.sissyXpEarned || 0);
+    return merged;
+  }
+
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -2963,6 +3052,7 @@ h3 { margin-bottom: 8px; }
       Bondage: 'bondageCompleted',
       'Dress Up': 'dressUpCompleted',
       Chores: 'choresCompleted',
+      Hygiene: 'hygieneCompleted',
       Exposure: 'exposureCompleted',
       Pain: 'painCompleted',
       Grindr: 'grindrCompleted'
@@ -3261,6 +3351,7 @@ h3 { margin-bottom: 8px; }
     if (roll.outfit.source === 'random' && roll.outfit.matching) state.stats.matchingOutfitCompletions += 1;
     if (roll.outfit.source === 'random' && !roll.outfit.matching) state.stats.mixedOutfitCompletions += 1;
 
+    recordDailyMainRoll(roll);
     const rankMessages = addRankXp(15 * roll.dares.length, 'Main roll completed');
     const milestoneMessages = checkHiddenMilestones();
     render();
@@ -3355,8 +3446,261 @@ h3 { margin-bottom: 8px; }
     `;
   }
 
+
+  function todayKey() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function ensureDailyTrainingProgress() {
+    state.training.daily = migrateDailyTrainingProgress(state.training.daily);
+    const today = todayKey();
+    if (state.training.daily.date !== today) state.training.daily = createDefaultDailyTrainingProgress();
+    return state.training.daily;
+  }
+
+  function ensureDailyContracts() {
+    ensureDailyTrainingProgress();
+    state.training.contracts = migrateContractState(state.training.contracts);
+    const today = todayKey();
+    if (state.training.contracts.date !== today || !Array.isArray(state.training.contracts.items) || state.training.contracts.items.length !== 3) {
+      state.training.contracts = { date: today, items: generateDailyContracts() };
+    }
+    return state.training.contracts;
+  }
+
+  function masteryXpToNext(level) {
+    if (Number(level || 0) >= MAX_MASTERY_LEVEL) return 0;
+    return Math.ceil(60 * Math.pow(1.15, Number(level || 0)));
+  }
+
+  function categoryMastery(category) {
+    state.training.mastery = migrateMasteryState(state.training.mastery);
+    return state.training.mastery[category] || { level: 0, xp: 0, totalXp: 0, mastered: false };
+  }
+
+  function categoryMasteryMultiplier(category) {
+    return 1 + (Number(categoryMastery(category).level || 0) * 0.01);
+  }
+
+  function categoryMasteryExtraRerolls(category) {
+    const level = Number(categoryMastery(category).level || 0);
+    return (level >= 5 ? 1 : 0) + (level >= 20 ? 1 : 0);
+  }
+
+  function categoryRankXpMultiplier(category) {
+    return Number(categoryMastery(category).level || 0) >= 10 ? 1.05 : 1;
+  }
+
+  function masteryXpForCompletion(category, active) {
+    if (category === 'Chastity') return 20 + (Math.floor(Number(active.durationMinutes || 0) / 60) * 2);
+    if (category === 'Pain') return 15 + Math.floor(Number(active.target || active.amount || 0) / 10);
+    if (category === 'Grindr') return 40;
+    return 25;
+  }
+
+  function level25MasteryExhysBonus(category) {
+    if (category === 'Grindr') return 200;
+    if (category === 'Chastity' || category === 'Pain') return 150;
+    return 100;
+  }
+
+  function addCategoryMasteryXp(category, amount, source = '') {
+    amount = Math.max(0, Number(amount || 0));
+    if (!amount || !TRAINING_CATEGORIES.includes(category)) return [];
+    const mastery = categoryMastery(category);
+    if (mastery.level >= MAX_MASTERY_LEVEL) return [];
+    const messages = [`+${formatNum(amount)} ${category} Mastery XP${source ? ` — ${source}` : ''}.`];
+    mastery.xp += amount;
+    mastery.totalXp = Number(mastery.totalXp || 0) + amount;
+    while (mastery.level < MAX_MASTERY_LEVEL) {
+      const needed = masteryXpToNext(mastery.level);
+      if (mastery.xp < needed) break;
+      mastery.xp -= needed;
+      mastery.level += 1;
+      state.training.stats.masteryLevelsGained = Number(state.training.stats.masteryLevelsGained || 0) + 1;
+      messages.push(`${category} Mastery Up: Level ${mastery.level}.`);
+      if (mastery.level === 5) messages.push(`${category} Mastery bonus unlocked: +1 category reroll.`);
+      if (mastery.level === 10) messages.push(`${category} Mastery bonus unlocked: +5% Sissy XP from this category.`);
+      if (mastery.level === 15) messages.push(`Mastery reward: ${applyRandomShopDiscount(0.10)}`);
+      if (mastery.level === 20) messages.push(`${category} Mastery bonus unlocked: another +1 category reroll.`);
+      if (mastery.level === 25) {
+        mastery.mastered = true;
+        mastery.xp = 0;
+        const bonus = level25MasteryExhysBonus(category);
+        state.exhys = Math.round((Number(state.exhys || 0) + bonus) * 10) / 10;
+        messages.push(`${category} mastered: +${formatNum(bonus)} Exhys.`);
+        messages.push(`Mastery reward: ${applyRandomShopDiscount(0.15)}`);
+        break;
+      }
+    }
+    return messages;
+  }
+
+  function possibleUserTaskCategories() {
+    return USER_TASK_TRAINING_CATEGORIES.filter(category => enabled(state.training.categories?.[category]?.tasks || []).length > 0);
+  }
+
+  function possibleTrainingCategories() {
+    return ['Chastity', 'Dress Up', 'Pain', 'Grindr', ...possibleUserTaskCategories()];
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(min + (Math.random() * ((max - min) + 1)));
+  }
+
+  function contractReward(difficulty, category = null) {
+    if (difficulty === 'easy') {
+      const reward = Math.random() < 0.5 ? { exhys: randomInt(5, 15) } : { obedience: randomInt(100, 300) };
+      if (category && Math.random() < 0.55) { reward.masteryXp = randomInt(10, 25); reward.masteryCategory = category; }
+      return reward;
+    }
+    if (difficulty === 'medium') {
+      const reward = Math.random() < 0.5 ? { exhys: randomInt(30, 75) } : { obedience: randomInt(600, 1200) };
+      reward.masteryXp = randomInt(40, 80);
+      if (category) reward.masteryCategory = category;
+      if (Math.random() < 0.25) reward.discountPercent = 0.03;
+      return reward;
+    }
+    const reward = Math.random() < 0.55 ? { exhys: randomInt(100, 180) } : { obedience: randomInt(1800, 3000) };
+    reward.masteryXp = randomInt(100, 180);
+    if (category) reward.masteryCategory = category;
+    if (Math.random() < 0.35) reward.discountPercent = 0.05;
+    return reward;
+  }
+
+  function makeContract(difficulty, objective) {
+    return { id: uid(), difficulty, claimed: false, objective, reward: contractReward(difficulty, objective.category || null) };
+  }
+
+  function generateDailyContracts() {
+    const userCats = possibleUserTaskCategories();
+    const allCats = possibleTrainingCategories();
+    const mainRollPossible = enabled(state.locations).length > 0 && enabled(state.dares).length > 0;
+    const easy = [
+      { type: 'trainingTasks', target: 1, label: 'Complete 1 Training task' },
+      { type: 'obedienceEarned', target: 250, label: 'Earn 250 Obedience from Training today' }
+    ];
+    if (mainRollPossible) easy.push({ type: 'mainDares', target: 1, label: 'Complete 1 Main Roll dare' });
+    userCats.forEach(category => easy.push({ type: 'categoryTask', category, target: 1, label: `Complete 1 ${category} task` }));
+
+    const medium = [
+      { type: 'trainingTasks', target: 3, label: 'Complete 3 Training tasks' },
+      { type: 'categoriesCompleted', target: 2, label: 'Complete tasks in 2 different Training categories' },
+      { type: 'categoryTask', category: 'Pain', target: 1, label: 'Complete 1 Pain task' },
+      { type: 'categoryTask', category: 'Grindr', target: 1, label: 'Complete 1 Grindr task' },
+      { type: 'obedienceEarned', target: 1500, label: 'Earn 1,500 Obedience from Training today' }
+    ];
+    if (mainRollPossible) medium.push({ type: 'mainRollMinDares', target: 1, minDares: 2, label: 'Complete 1 Main Roll with at least 2 dares' });
+    allCats.forEach(category => medium.push({ type: 'categoryTask', category, target: 2, label: `Complete 2 ${category} tasks` }));
+
+    const hard = [
+      { type: 'trainingTasks', target: 6, label: 'Complete 6 Training tasks' },
+      { type: 'categoriesCompleted', target: 4, label: 'Complete tasks in 4 different Training categories' },
+      { type: 'painAndGrindr', target: 2, label: 'Complete Pain and Grindr on the same day' },
+      { type: 'obedienceEarned', target: 3500, label: 'Earn 3,500 Obedience from Training today' }
+    ];
+    if (mainRollPossible) {
+      hard.push({ type: 'mainRolls', target: 2, label: 'Complete 2 Main Rolls' });
+      hard.push({ type: 'mainRollMinDares', target: 1, minDares: 4, label: 'Complete 1 Main Roll with at least 4 dares' });
+    }
+    allCats.forEach(category => hard.push({ type: 'categoryTask', category, target: 3, label: `Complete 3 ${category} tasks` }));
+
+    return [
+      makeContract('easy', choice(easy)),
+      makeContract('medium', choice(medium)),
+      makeContract('hard', choice(hard))
+    ];
+  }
+
+  function contractProgress(contract) {
+    const daily = ensureDailyTrainingProgress();
+    const byCategory = daily.trainingByCategory || {};
+    const objective = contract.objective || {};
+    if (objective.type === 'trainingTasks') return Math.min(objective.target, daily.trainingTasks || 0);
+    if (objective.type === 'categoryTask') return Math.min(objective.target, Number(byCategory[objective.category] || 0));
+    if (objective.type === 'categoriesCompleted') return Math.min(objective.target, Object.values(byCategory).filter(v => Number(v || 0) > 0).length);
+    if (objective.type === 'mainDares') return Math.min(objective.target, daily.mainDares || 0);
+    if (objective.type === 'mainRolls') return Math.min(objective.target, daily.mainRolls || 0);
+    if (objective.type === 'mainRollMinDares') return (Number(daily.maxDaresInRoll || 0) >= Number(objective.minDares || 1)) ? 1 : 0;
+    if (objective.type === 'obedienceEarned') return Math.min(objective.target, Number(daily.obedienceEarned || 0));
+    if (objective.type === 'painAndGrindr') return Math.min(2, (Number(byCategory.Pain || 0) > 0 ? 1 : 0) + (Number(byCategory.Grindr || 0) > 0 ? 1 : 0));
+    return 0;
+  }
+
+  function contractTarget(contract) {
+    return Number(contract.objective?.target || 1);
+  }
+
+  function contractReady(contract) {
+    return contractProgress(contract) >= contractTarget(contract);
+  }
+
+  function recordDailyTrainingCompletion(category, obedienceEarned) {
+    const daily = ensureDailyTrainingProgress();
+    daily.trainingTasks = Number(daily.trainingTasks || 0) + 1;
+    daily.trainingByCategory = daily.trainingByCategory || {};
+    daily.trainingByCategory[category] = Number(daily.trainingByCategory[category] || 0) + 1;
+    daily.obedienceEarned = Math.round((Number(daily.obedienceEarned || 0) + Number(obedienceEarned || 0)) * 10) / 10;
+  }
+
+  function recordDailyMainRoll(roll) {
+    const daily = ensureDailyTrainingProgress();
+    daily.mainRolls = Number(daily.mainRolls || 0) + 1;
+    daily.mainDares = Number(daily.mainDares || 0) + Number(roll?.dares?.length || 0);
+    daily.maxDaresInRoll = Math.max(Number(daily.maxDaresInRoll || 0), Number(roll?.dares?.length || 0));
+  }
+
+  function recordDailySissyXp(amount) {
+    const daily = ensureDailyTrainingProgress();
+    daily.sissyXpEarned = Math.round((Number(daily.sissyXpEarned || 0) + Number(amount || 0)) * 10) / 10;
+  }
+
+  function claimDailyContract(id) {
+    const contracts = ensureDailyContracts();
+    const contract = contracts.items.find(item => item.id === id);
+    if (!contract || contract.claimed) return;
+    if (!contractReady(contract)) { toast('Contract is not complete yet.'); return; }
+    contract.claimed = true;
+    const reward = contract.reward || {};
+    const messages = [`${capitalize(contract.difficulty)} contract claimed.`];
+    if (reward.exhys) {
+      state.exhys = Math.round((Number(state.exhys || 0) + Number(reward.exhys || 0)) * 10) / 10;
+      messages.push(`+${formatNum(reward.exhys)} Exhys.`);
+    }
+    if (reward.obedience) {
+      state.obedience = Math.round((Number(state.obedience || 0) + Number(reward.obedience || 0)) * 10) / 10;
+      state.training.stats.totalObedienceEarned = Math.round((Number(state.training.stats.totalObedienceEarned || 0) + Number(reward.obedience || 0)) * 10) / 10;
+      messages.push(`+${formatNum(reward.obedience)} Obedience.`);
+    }
+    if (reward.masteryXp) {
+      let categories = [];
+      if (reward.masteryCategory) categories = [reward.masteryCategory];
+      else categories = Object.entries(ensureDailyTrainingProgress().trainingByCategory || {}).filter(([, count]) => Number(count || 0) > 0).map(([category]) => category);
+      if (categories.length) {
+        const each = Math.max(1, Math.floor(Number(reward.masteryXp || 0) / categories.length));
+        categories.forEach(category => messages.push(...addCategoryMasteryXp(category, each, 'Daily contract')));
+      }
+    }
+    if (reward.discountPercent) messages.push(`Contract reward: ${applyRandomShopDiscount(Number(reward.discountPercent || 0))}`);
+    state.training.stats.contractsClaimed = Number(state.training.stats.contractsClaimed || 0) + 1;
+    const milestoneMessages = checkTrainingMilestones();
+    render();
+    queueToasts([...messages, ...milestoneMessages]);
+  }
+
+  function capitalize(text) {
+    text = String(text || '');
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
   function renderTraining() {
     syncTrainingTimers();
+    ensureDailyTrainingProgress();
+    ensureDailyContracts();
     const training = state.training || createDefaultTrainingState();
     const fullConvert = Math.floor(Number(state.obedience || 0) / 100);
     views.training.innerHTML = `
@@ -3379,6 +3723,9 @@ h3 { margin-bottom: 8px; }
         </div>
       </section>
 
+      ${renderDailyContracts()}
+      ${renderMasterySection()}
+
       <section class="card" style="margin-top:14px">
         <div class="card-title-row">
           <div>
@@ -3396,6 +3743,7 @@ h3 { margin-bottom: 8px; }
     `;
 
     document.getElementById('convertObedienceBtn')?.addEventListener('click', convertObedience);
+    document.querySelectorAll('[data-claim-contract]').forEach(btn => btn.addEventListener('click', () => claimDailyContract(btn.dataset.claimContract)));
     document.querySelectorAll('[data-training-upgrade]').forEach(btn => btn.addEventListener('click', () => buyTrainingUpgrade(btn.dataset.trainingUpgrade)));
     document.querySelectorAll('[data-roll-training]').forEach(btn => btn.addEventListener('click', () => rollTrainingOffer(btn.dataset.rollTraining)));
     document.querySelectorAll('[data-reroll-training]').forEach(btn => btn.addEventListener('click', () => rerollTrainingOffer(btn.dataset.rerollTraining)));
@@ -3428,6 +3776,95 @@ h3 { margin-bottom: 8px; }
     document.querySelectorAll('[data-training-task-enabled]').forEach(input => input.addEventListener('change', () => updateTrainingTask(input.dataset.trainingTaskEnabled, input.dataset.taskId, { enabled: input.checked })));
     document.querySelectorAll('[data-training-task-text]').forEach(input => input.addEventListener('input', () => updateTrainingTask(input.dataset.trainingTaskText, input.dataset.taskId, { text: input.value })));
     document.querySelectorAll('[data-delete-training-task]').forEach(btn => btn.addEventListener('click', () => deleteTrainingTask(btn.dataset.deleteTrainingTask, btn.dataset.taskId)));
+  }
+
+
+  function renderDailyContracts() {
+    const contracts = ensureDailyContracts().items || [];
+    return `
+      <section class="card" style="margin-top:14px">
+        <div class="card-title-row">
+          <div>
+            <h2>Daily Contract Board</h2>
+            <p class="muted">One Easy, one Medium, and one Hard contract reset each day. No Price Freeze rewards.</p>
+          </div>
+          <span class="badge">${esc(todayKey())}</span>
+        </div>
+        <div class="contract-grid">${contracts.map(renderContractCard).join('')}</div>
+      </section>
+    `;
+  }
+
+  function renderContractCard(contract) {
+    const progress = contractProgress(contract);
+    const target = contractTarget(contract);
+    const pct = Math.min(100, Math.round((progress / Math.max(1, target)) * 100));
+    const ready = contractReady(contract);
+    return `
+      <div class="contract-card ${ready ? 'ready' : ''} ${contract.claimed ? 'claimed' : ''}">
+        <div class="contract-title-row">
+          <div>
+            <h3>${capitalize(contract.difficulty)} Contract</h3>
+            <p class="muted small">${esc(contract.objective?.label || 'Daily objective')}</p>
+          </div>
+          <span class="badge">${contract.claimed ? 'Claimed' : ready ? 'Ready' : 'Active'}</span>
+        </div>
+        <div class="rank-progress"><span style="width:${pct}%"></span></div>
+        <p class="small muted">Progress: ${formatNum(progress)} / ${formatNum(target)}</p>
+        <div class="contract-reward-list">${renderContractRewardBadges(contract.reward || {})}</div>
+        <button class="btn primary small" data-claim-contract="${esc(contract.id)}" ${ready && !contract.claimed ? '' : 'disabled'}>Claim</button>
+      </div>
+    `;
+  }
+
+  function renderContractRewardBadges(reward) {
+    const badges = [];
+    if (reward.exhys) badges.push(`<span class="badge">${currencyIcon('exhys')}+${formatNum(reward.exhys)} Exhys</span>`);
+    if (reward.obedience) badges.push(`<span class="badge">${currencyIcon('obedience')}+${formatNum(reward.obedience)} Obedience</span>`);
+    if (reward.masteryXp) badges.push(`<span class="badge">+${formatNum(reward.masteryXp)} Mastery XP</span>`);
+    if (reward.discountPercent) badges.push(`<span class="badge discount-badge">${Math.round(Number(reward.discountPercent || 0) * 100)}% Shop Discount</span>`);
+    return badges.join('') || '<span class="badge">Small reward</span>';
+  }
+
+  function renderMasterySection() {
+    return `
+      <section class="card" style="margin-top:14px">
+        <div class="card-title-row">
+          <div>
+            <h2>Category Mastery</h2>
+            <p class="muted">Each category levels 0–25. Every level adds +1% Obedience rewards for that category.</p>
+          </div>
+          <span class="badge">Max Lv ${MAX_MASTERY_LEVEL}</span>
+        </div>
+        <div class="mastery-grid">${TRAINING_CATEGORIES.map(renderMasteryCard).join('')}</div>
+      </section>
+    `;
+  }
+
+  function renderMasteryCard(category) {
+    const mastery = categoryMastery(category);
+    const level = Number(mastery.level || 0);
+    const next = masteryXpToNext(level);
+    const pct = level >= MAX_MASTERY_LEVEL ? 100 : Math.min(100, Math.round((Number(mastery.xp || 0) / Math.max(1, next)) * 100));
+    return `
+      <div class="mastery-card ${level >= MAX_MASTERY_LEVEL ? 'mastered' : ''}">
+        <div class="mastery-title-row">
+          <div>
+            <h3>${esc(category)}</h3>
+            <p class="muted small">Reward bonus: +${level}%</p>
+          </div>
+          <span class="badge">Lv ${level}</span>
+        </div>
+        <div class="rank-progress"><span style="width:${pct}%"></span></div>
+        <p class="small muted">${level >= MAX_MASTERY_LEVEL ? 'Mastered.' : `${formatNum(mastery.xp || 0)} / ${formatNum(next)} XP`}</p>
+        <div class="mastery-bonus-row">
+          ${level >= 5 ? '<span class="badge">+1 reroll</span>' : ''}
+          ${level >= 10 ? '<span class="badge">+5% Sissy XP</span>' : ''}
+          ${level >= 20 ? '<span class="badge">+2 rerolls</span>' : ''}
+          ${level >= 25 ? '<span class="badge legendary">Mastered</span>' : ''}
+        </div>
+      </div>
+    `;
   }
 
   function renderTrainingUpgrade(upgrade) {
@@ -3465,7 +3902,10 @@ h3 { margin-bottom: 8px; }
           ? '<p class="muted small">Special counter category. Rolls Spanks or CBT with a fixed target from 1 to 500, weighted toward lower amounts.</p>'
           : category === 'Grindr'
             ? '<p class="muted small">Special quick-complete category. Rolls an age range weighted toward 25 and an action, with boosted Obedience rewards.</p>'
-            : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
+            : category === 'Hygiene'
+              ? '<p class="muted small">Normal category. Add hygiene tasks below; rewards and rerolls work like other standard training.</p>'
+              : '<p class="muted small">Add equal tasks below. The offer gamble rolls the reward, not task difficulty.</p>';
+    const mastery = categoryMastery(category);
     return `
       <section class="card compact training-category">
         <div class="card-title-row">
@@ -3473,7 +3913,7 @@ h3 { margin-bottom: 8px; }
             <h2>${esc(category)}</h2>
             ${specialNote}
           </div>
-          <span class="badge">${trainingRerollLimitForNewOffer()} rerolls</span>
+          <div class="category-pill-row"><span class="badge">Lv ${mastery.level || 0} Mastery</span><span class="badge">${trainingRerollLimitForNewOffer(category)} rerolls</span></div>
         </div>
         ${renderTrainingStatus(category, offer, active)}
         ${normalTaskEditor}
@@ -3618,8 +4058,8 @@ h3 { margin-bottom: 8px; }
     return Math.ceil((upgrade?.baseCost || 1000) * Math.pow(1.3, level));
   }
 
-  function trainingRerollLimitForNewOffer() {
-    return 2 + Number(state.training.upgrades.extraRerolls || 0);
+  function trainingRerollLimitForNewOffer(category = '') {
+    return 2 + Number(state.training.upgrades.extraRerolls || 0) + categoryMasteryExtraRerolls(category);
   }
 
   function obedienceMultiplier() {
@@ -3635,8 +4075,8 @@ h3 { margin-bottom: 8px; }
     return Math.max(1, Math.min(5000, Math.ceil(-Math.log(1 - Math.random()) * scale)));
   }
 
-  function applyTrainingMultiplier(baseReward) {
-    return Math.max(1, Math.floor(baseReward * obedienceMultiplier()));
+  function applyTrainingMultiplier(baseReward, category = '') {
+    return Math.max(1, Math.floor(baseReward * obedienceMultiplier() * categoryMasteryMultiplier(category)));
   }
 
   function rollTrainingOffer(category) {
@@ -3677,7 +4117,7 @@ h3 { margin-bottom: 8px; }
   }
 
   function createTrainingOffer(category) {
-    const base = { id: uid(), category, rerollsUsed: 0, maxRerolls: trainingRerollLimitForNewOffer(), createdAt: new Date().toISOString() };
+    const base = { id: uid(), category, rerollsUsed: 0, maxRerolls: trainingRerollLimitForNewOffer(category), createdAt: new Date().toISOString() };
     if (category === 'Chastity') return { ...base, ...createChastityOffer() };
     if (category === 'Dress Up') return { ...base, ...createDressUpTrainingOffer() };
     if (category === 'Pain') return { ...base, ...createPainTrainingOffer() };
@@ -3686,7 +4126,7 @@ h3 { margin-bottom: 8px; }
     if (!tasks.length) { toast(`Add at least one enabled ${category} task first.`); return null; }
     const task = choice(tasks);
     const baseReward = rollTrainingBaseReward();
-    return { ...base, taskText: task.text, baseReward, reward: applyTrainingMultiplier(baseReward) };
+    return { ...base, taskText: task.text, baseReward, reward: applyTrainingMultiplier(baseReward, category) };
   }
 
   function createDressUpTrainingOffer() {
@@ -3697,7 +4137,7 @@ h3 { margin-bottom: 8px; }
     return {
       taskText: `Wear this outfit for ${minutes} minutes: ${outfitText}.`,
       baseReward,
-      reward: applyTrainingMultiplier(baseReward),
+      reward: applyTrainingMultiplier(baseReward, 'Dress Up'),
       outfit
     };
   }
@@ -3713,7 +4153,7 @@ h3 { margin-bottom: 8px; }
       target,
       done: 0,
       baseReward,
-      reward: applyTrainingMultiplier(baseReward)
+      reward: applyTrainingMultiplier(baseReward, 'Pain')
     };
   }
 
@@ -3749,7 +4189,7 @@ h3 { margin-bottom: 8px; }
       ageEnd: range.end,
       action,
       baseReward,
-      reward: applyTrainingMultiplier(baseReward)
+      reward: applyTrainingMultiplier(baseReward, 'Grindr')
     };
   }
 
@@ -3781,7 +4221,7 @@ h3 { margin-bottom: 8px; }
       durationMinutes,
       currentTimerSeconds: durationMinutes * 60,
       baseReward,
-      reward: applyTrainingMultiplier(baseReward)
+      reward: applyTrainingMultiplier(baseReward, 'Chastity')
     };
   }
 
@@ -3839,11 +4279,14 @@ h3 { margin-bottom: 8px; }
       stats.luckBonusesTriggered += luck.chunks;
       stats.luckBonusObedience += luck.bonus;
     }
-    const xpAmount = category === 'Chastity' ? Math.max(1, Math.floor(Number(active.durationMinutes || 0) / 60)) : 5;
+    recordDailyTrainingCompletion(category, finalReward);
+    const masteryMessages = addCategoryMasteryXp(category, masteryXpForCompletion(category, active), `${category} completed`);
+    const baseXpAmount = category === 'Chastity' ? Math.max(1, Math.floor(Number(active.durationMinutes || 0) / 60)) : 5;
+    const xpAmount = Math.max(1, Math.round(baseXpAmount * categoryRankXpMultiplier(category)));
     const rankMessages = addRankXp(xpAmount, `${category} training completed`);
     const milestoneMessages = checkTrainingMilestones();
     render();
-    queueToasts([`Training complete: +${formatNum(finalReward)} Obedience${luck.bonus ? ` (${formatNum(luck.bonus)} from luck)` : ''}.`, ...rankMessages, ...milestoneMessages]);
+    queueToasts([`Training complete: +${formatNum(finalReward)} Obedience${luck.bonus ? ` (${formatNum(luck.bonus)} from luck)` : ''}.`, ...masteryMessages, ...rankMessages, ...milestoneMessages]);
   }
 
   function trainingLuckBonus() {
@@ -4023,6 +4466,7 @@ h3 { margin-bottom: 8px; }
   function addRankXp(amount, reason = '') {
     amount = Math.max(0, Number(amount || 0));
     if (!amount || state.sissyRank.rank >= 50) return [];
+    recordDailySissyXp(amount);
     const messages = [`+${formatNum(amount)} Sissy XP${reason ? ` — ${reason}` : ''}.`];
     state.sissyRank.xp += amount;
     state.sissyRank.totalXp += amount;
